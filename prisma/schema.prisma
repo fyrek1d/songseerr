@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  hashedPassword String?
+  name          String?
+  avatar        String?
+  role          String    @default("user")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  requests     Request[]
+  collections  Collection[]
+  sessions     Session[]
+  createdIssues Issue[] @relation("issueReporter")
+  resolvedIssues Issue[] @relation("issueResolver")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Request {
+  id          String   @id @default(cuid())
+  type        String
+  title       String
+  subtitle    String?
+  coverUrl    String?
+  externalId  String
+  externalUrl String?
+  status      String   @default("pending")
+  userId      String
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  approvedAt  DateTime?
+  declinedAt  DateTime?
+  fulfilledAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Collection {
+  id        String   @id @default(cuid())
+  name      String
+  description String?
+  isPublic  Boolean  @default(true)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  CollectionItem[]
+}
+
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  title        String
+  artist        String?
+  coverUrl     String?
+  externalId   String
+  externalUrl  String?
+  type         String
+  position     Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, externalId, type])
+}
+
+model Issue {
+  id        String   @id @default(cuid())
+  title     String
+  description  String
+  itemTitle     String
+  itemType      String
+  itemId        String?
+  status    String   @default("open")
+  reportedById String
+  resolvedById String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+  reporter User @relation("issueReporter", fields: [reportedById], references: [id], onDelete: Cascade)
+  resolver  User? @relation("issueResolver", fields: [resolvedById], references: [id])
+}
+
+model LibraryItem {
+  id        String   @id @default(cuid())
+  title     String
+  artist     String?
+  type      String
+  externalId String?
+  source    String
+  coverUrl   String?
+  addedAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([externalId, type, source])
+}
+
+model AppSettings {
+  id       String @id @default("app")
+  settings String @default("{}")
+}
