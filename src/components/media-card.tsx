@@ -2,10 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Music, Users, Music2, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type IconName = "book" | "music" | "artist" | "track";
 
 interface MediaCardProps {
   id: string;
@@ -15,7 +18,7 @@ interface MediaCardProps {
   coverUrl?: string;
   year?: number;
   className?: string;
-  icon?: LucideIcon;
+  icon?: IconName;
 }
 
 const typeConfig = {
@@ -24,6 +27,13 @@ const typeConfig = {
   artist: { label: "Artist", icon: Users },
   track: { label: "Track", icon: Music2 },
 } as const;
+
+const iconMap: Record<IconName, LucideIcon> = {
+  book: BookOpen,
+  music: Music,
+  artist: Users,
+  track: Music2,
+};
 
 export function CoverImage({
   coverUrl,
@@ -38,6 +48,7 @@ export function CoverImage({
 }) {
   const config = typeConfig[type];
   const Icon = config.icon;
+  const [failed, setFailed] = useState(false);
   return (
     <div
       className={cn(
@@ -45,7 +56,7 @@ export function CoverImage({
         className
       )}
     >
-      {coverUrl ? (
+      {coverUrl && !failed ? (
         <Image
           src={coverUrl}
           alt={title}
@@ -53,6 +64,7 @@ export function CoverImage({
           className="object-cover"
           sizes="(max-width: 768px) 50vw, 200px"
           unoptimized
+          onError={() => setFailed(true)}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-muted">
@@ -74,7 +86,7 @@ export function MediaCard({
   icon,
 }: MediaCardProps) {
   const config = typeConfig[type];
-  const BadgeIcon = icon || config.icon;
+  const BadgeIcon = icon ? iconMap[icon] : config.icon;
   return (
     <Link href={`/detail/${type}/${id}`} className={cn("group block", className)}>
       <Card className="overflow-hidden transition-all group-hover:border-primary/50 group-hover:shadow-lg">

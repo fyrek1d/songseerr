@@ -70,13 +70,12 @@ export async function searchMusicBrainz(query: string): Promise<SearchResult[]> 
         .map((ac: any) => ac.name || ac.artist?.name || "")
         .filter(Boolean)
         .join(", ");
-      const hasArt = release["cover-art-archive"]?.front === true;
       return {
         id: release.id,
         type: "music" as const,
         title: release.title,
         subtitle: artist || "Unknown artist",
-        coverUrl: hasArt ? `${COVERART_URL}/release/${release.id}/front-250` : undefined,
+        coverUrl: `${COVERART_URL}/release/${release.id}/front-250`,
         externalUrl: `https://musicbrainz.org/release/${release.id}`,
         year: release.date ? parseInt(release.date.slice(0, 4), 10) : undefined,
         details: { source: "musicbrainz", releaseDate: release.date },
@@ -124,13 +123,12 @@ export async function searchMusicBrainzTracks(query: string): Promise<SearchResu
         .filter(Boolean)
         .join(", ");
       const release = recording.releases?.[0];
-      const hasArt = release?.["cover-art-archive"]?.front === true;
       return {
         id: recording.id,
         type: "track" as const,
         title: recording.title,
         subtitle: artist || "Unknown artist",
-        coverUrl: hasArt ? `${COVERART_URL}/release/${release.id}/front-250` : undefined,
+        coverUrl: release ? `${COVERART_URL}/release/${release.id}/front-250` : undefined,
         externalUrl: `https://musicbrainz.org/recording/${recording.id}`,
         year: release?.date ? parseInt(release.date.slice(0, 4), 10) : undefined,
         details: { source: "musicbrainz", releaseId: release?.id, releaseTitle: release?.title },

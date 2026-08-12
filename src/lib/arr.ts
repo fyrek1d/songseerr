@@ -85,9 +85,19 @@ export async function hasInReadarr(externalId: string): Promise<boolean> {
   return data.some((book: any) => book.foreignBookId === externalId);
 }
 
-export async function hasInLidarr(externalId: string): Promise<boolean> {
+export async function hasInLidarr(externalId: string, type?: string): Promise<boolean> {
   const config = await getLidarrConfig();
   if (!config?.url || !config?.apiKey) return false;
+
+  // For artist requests, check artists by foreignArtistId
+  if (type === "artist") {
+    const artists = await arrRequest(config.url, config.apiKey, `/api/v1/artist?foreignArtistId=${encodeURIComponent(externalId)}`);
+    if (Array.isArray(artists)) {
+      return artists.some((artist: any) => artist.foreignArtistId === externalId);
+    }
+    return false;
+  }
+
   const data = await arrRequest(config.url, config.apiKey, `/api/v1/album?foreignAlbumId=${encodeURIComponent(externalId)}`);
   if (!Array.isArray(data)) return false;
   return data.some((album: any) => album.foreignAlbumId === externalId);

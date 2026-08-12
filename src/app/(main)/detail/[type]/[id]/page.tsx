@@ -371,7 +371,11 @@ export default async function DetailPage({
   const release = details.releases?.[0];
 
   const alreadyRequested = await prisma.request.findFirst({
-    where: { externalId: id, type: "track", status: { in: ["pending", "approved"] } },
+    where: {
+      externalId: release?.id || id,
+      type: "track",
+      status: { in: ["pending", "approved"] },
+    },
   });
 
   return (
@@ -400,10 +404,12 @@ export default async function DetailPage({
             <RequestButton
               item={{
                 type: "track",
-                title: details.title,
+                title: release?.title || details.title,
                 subtitle: artists ? `${artists} — ${release?.title || "single"}` : undefined,
-                externalId: id,
-                externalUrl: `https://musicbrainz.org/recording/${id}`,
+                externalId: release?.id || id,
+                externalUrl: release?.id
+                  ? `https://musicbrainz.org/release/${release.id}`
+                  : `https://musicbrainz.org/recording/${id}`,
               }}
               disabled={!!alreadyRequested}
             />

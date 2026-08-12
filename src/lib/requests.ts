@@ -59,7 +59,7 @@ export async function createRequest(data: {
     }
   } else if (data.type === "artist") {
     const { hasInLidarr } = await import("./arr");
-    const inLidarr = await hasInLidarr(data.externalId);
+    const inLidarr = await hasInLidarr(data.externalId, "artist");
     if (inLidarr) {
       return { status: 409, error: "Artist already in Lidarr." };
     }
