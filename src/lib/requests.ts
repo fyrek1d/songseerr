@@ -45,6 +45,33 @@ export async function createRequest(data: {
     return { status: 409, error: "Item already in library." };
   }
 
+  if (data.type === "book") {
+    const { hasInReadarr } = await import("./arr");
+    const inReadarr = await hasInReadarr(data.externalId);
+    if (inReadarr) {
+      return { status: 409, error: "Item already in Readarr." };
+    }
+  } else if (data.type === "music") {
+    const { hasInLidarr } = await import("./arr");
+    const inLidarr = await hasInLidarr(data.externalId);
+    if (inLidarr) {
+      return { status: 409, error: "Item already in Lidarr." };
+    }
+  } else if (data.type === "artist") {
+    const { hasInLidarr } = await import("./arr");
+    const inLidarr = await hasInLidarr(data.externalId);
+    if (inLidarr) {
+      return { status: 409, error: "Artist already in Lidarr." };
+    }
+  } else if (data.type === "track") {
+    // For tracks, check if the album is already in Lidarr
+    const { hasInLidarr } = await import("./arr");
+    const inLidarr = await hasInLidarr(data.externalId);
+    if (inLidarr) {
+      return { status: 409, error: "Album containing this track already in Lidarr." };
+    }
+  }
+
   const user = await prisma.user.findUnique({ where: { id: data.userId } });
   if (!user) return { status: 404, error: "User not found." };
 
@@ -104,6 +131,24 @@ export async function updateRequestStatus(
     data,
     include: { user: { select: { username: true, role: true } } },
   });
+
+  if (status === REQUEST_STATUS.APPROVED) {
+    if (request.type === "book") {
+      import("./arr").then(({ pushToReadarr }) =>
+        pushToReadarr(request.title, request.externalId, request.subtitle || undefined)
+      );
+    } else if (request.type === "music" || request.type === "artist") {
+      import("./arr").then(({ pushToLidarr }) =>
+        pushToLidarr(request.title, request.externalId, request.subtitle || undefined)
+      );
+    }
+    // For tracks, we push the album (externalId should be the release ID)
+    else if (request.type === "track") {
+      import("./arr").then(({ pushToLidarr }) =>
+        pushToLidarr(request.title, request.externalId, request.subtitle || undefined)
+      );
+    }
+  }
 
   notifyWebhook("request-" + status, {
     title: request.title,

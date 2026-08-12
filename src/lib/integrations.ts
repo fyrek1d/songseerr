@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { getJellyfinConfig, getAudiobookshelfConfig, getNavidromeConfig } from "./settings";
+import { scanReadarr, scanLidarr } from "./arr";
 
 export interface LibraryItemInput {
   title: string;
@@ -147,13 +148,15 @@ export async function runLibraryScan(): Promise<{ added: number; source: string 
     ["jellyfin", scanJellyfin],
     ["audiobookshelf", scanAudiobookshelf],
     ["navidrome", scanNavidrome],
+    ["readarr", scanReadarr],
+    ["lidarr", scanLidarr],
   ] as const) {
     try {
       const items = await fn();
       let added = 0;
       for (const item of items) {
         if (!item.title) continue;
-        const exists = await prisma.libraryItem.findFirst({
+        const existing = await prisma.libraryItem.findFirst({
           where: {
             title: item.title,
             artist: item.artist || undefined,
@@ -161,13 +164,14 @@ export async function runLibraryScan(): Promise<{ added: number; source: string 
             source: item.source,
           },
         });
-        if (!exists) {
+        if (!existing) {
           await prisma.libraryItem.create({ data: item });
           added++;
         }
       }
       results.push({ source: name, added });
-    } catch {
+    } catch (error) {
+      console.error(`[LibraryScan] Error scanning ${name}:`, error);
       results.push({ source: name, added: 0 });
     }
   }

@@ -21,6 +21,20 @@ export interface AppSettingsData {
       password: string;
       username?: string;
     };
+    readarr?: {
+      url: string;
+      apiKey: string;
+      rootFolderId?: number;
+      qualityProfileId?: number;
+      metadataProfileId?: number;
+    };
+    lidarr?: {
+      url: string;
+      apiKey: string;
+      rootFolderId?: number;
+      qualityProfileId?: number;
+      metadataProfileId?: number;
+    };
   };
 }
 
@@ -65,6 +79,16 @@ export async function getAudiobookshelfConfig() {
 export async function getNavidromeConfig() {
   const settings = await getSettings();
   return settings.libraryIntegration.navidrome;
+}
+
+export async function getReadarrConfig() {
+  const settings = await getSettings();
+  return settings.libraryIntegration.readarr;
+}
+
+export async function getLidarrConfig() {
+  const settings = await getSettings();
+  return settings.libraryIntegration.lidarr;
 }
 
 export async function getWebhookUrl() {

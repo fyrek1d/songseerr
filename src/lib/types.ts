@@ -1,4 +1,4 @@
-export type MediaType = "book" | "music";
+export type MediaType = "book" | "music" | "artist" | "track";
 
 export interface SearchResult {
   id: string;
@@ -9,6 +9,32 @@ export interface SearchResult {
   externalUrl?: string;
   year?: number;
   details: Record<string, any>;
+}
+
+export interface MusicBrainzArtist {
+  id: string;
+  name: string;
+  type?: string;
+  "country"?: string;
+  "life-span"?: {
+    begin?: string;
+    end?: string;
+    ended?: boolean;
+  };
+}
+
+export interface MusicBrainzRecording {
+  id: string;
+  title: string;
+  "artist-credit"?: Array<{
+    artist?: { id: string; name: string };
+    name?: string;
+  }>;
+  releases?: Array<{
+    id: string;
+    title: string;
+    "cover-art-archive"?: { front: boolean };
+  }>;
 }
 
 export interface OpenLibraryDoc {

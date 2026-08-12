@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 interface RequestButtonProps {
   item: {
-    type: "book" | "music";
+    type: "book" | "music" | "artist" | "track";
     title: string;
     subtitle?: string;
     coverUrl?: string;

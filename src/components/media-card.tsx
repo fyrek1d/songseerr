@@ -4,18 +4,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Music } from "lucide-react";
+import { BookOpen, Music, Users, Music2, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MediaCardProps {
   id: string;
-  type: "book" | "music";
+  type: "book" | "music" | "artist" | "track";
   title: string;
   subtitle?: string;
   coverUrl?: string;
   year?: number;
   className?: string;
+  icon?: LucideIcon;
 }
+
+const typeConfig = {
+  book: { label: "Book", icon: BookOpen },
+  music: { label: "Album", icon: Music },
+  artist: { label: "Artist", icon: Users },
+  track: { label: "Track", icon: Music2 },
+} as const;
 
 export function CoverImage({
   coverUrl,
@@ -25,10 +33,11 @@ export function CoverImage({
 }: {
   coverUrl?: string;
   title: string;
-  type: "book" | "music";
+  type: "book" | "music" | "artist" | "track";
   className?: string;
 }) {
-  const fallback = type === "book" ? "/placeholder-book.svg" : "/placeholder-music.svg";
+  const config = typeConfig[type];
+  const Icon = config.icon;
   return (
     <div
       className={cn(
@@ -47,11 +56,7 @@ export function CoverImage({
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-muted">
-          {type === "book" ? (
-            <BookOpen className="h-8 w-8 text-muted-foreground" />
-          ) : (
-            <Music className="h-8 w-8 text-muted-foreground" />
-          )}
+          <Icon className="h-8 w-8 text-muted-foreground" />
         </div>
       )}
     </div>
@@ -66,7 +71,10 @@ export function MediaCard({
   coverUrl,
   year,
   className,
+  icon,
 }: MediaCardProps) {
+  const config = typeConfig[type];
+  const BadgeIcon = icon || config.icon;
   return (
     <Link href={`/detail/${type}/${id}`} className={cn("group block", className)}>
       <Card className="overflow-hidden transition-all group-hover:border-primary/50 group-hover:shadow-lg">
@@ -77,8 +85,8 @@ export function MediaCard({
               className="absolute left-2 top-2 bg-background/80 backdrop-blur"
               variant="secondary"
             >
-              {type === "book" ? <BookOpen className="mr-1 h-3 w-3" /> : <Music className="mr-1 h-3 w-3" />}
-              {type === "book" ? "Book" : "Music"}
+              <BadgeIcon className="mr-1 h-3 w-3" />
+              {config.label}
             </Badge>
           </div>
           <div className="p-3">

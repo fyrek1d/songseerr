@@ -87,15 +87,71 @@ export async function searchMusicBrainz(query: string): Promise<SearchResult[]> 
   }
 }
 
+export async function searchMusicBrainzArtists(query: string): Promise<SearchResult[]> {
+  try {
+    const res = await fetch(
+      `${MUSICBRAINZ_URL}/artist/?query=${encodeURIComponent(query)}&fmt=json&limit=12`,
+      { headers: { "User-Agent": UA } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.artists || []).map((artist: any) => ({
+      id: artist.id,
+      type: "artist" as const,
+      title: artist.name,
+      subtitle: artist.country ? `Artist from ${artist.country}` : "Artist",
+      coverUrl: undefined,
+      externalUrl: `https://musicbrainz.org/artist/${artist.id}`,
+      year: artist["life-span"]?.begin ? parseInt(artist["life-span"].begin.slice(0, 4), 10) : undefined,
+      details: { source: "musicbrainz", type: artist.type, country: artist.country, lifeSpan: artist["life-span"] },
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function searchMusicBrainzTracks(query: string): Promise<SearchResult[]> {
+  try {
+    const res = await fetch(
+      `${MUSICBRAINZ_URL}/recording/?query=${encodeURIComponent(query)}&fmt=json&limit=12`,
+      { headers: { "User-Agent": UA } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.recordings || []).map((recording: any) => {
+      const artist = (recording["artist-credit"] || [])
+        .map((ac: any) => ac.name || ac.artist?.name || "")
+        .filter(Boolean)
+        .join(", ");
+      const release = recording.releases?.[0];
+      const hasArt = release?.["cover-art-archive"]?.front === true;
+      return {
+        id: recording.id,
+        type: "track" as const,
+        title: recording.title,
+        subtitle: artist || "Unknown artist",
+        coverUrl: hasArt ? `${COVERART_URL}/release/${release.id}/front-250` : undefined,
+        externalUrl: `https://musicbrainz.org/recording/${recording.id}`,
+        year: release?.date ? parseInt(release.date.slice(0, 4), 10) : undefined,
+        details: { source: "musicbrainz", releaseId: release?.id, releaseTitle: release?.title },
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function unifiedSearch(query: string) {
-  const [books, music] = await Promise.all([
+  const [books, music, artists, tracks] = await Promise.all([
     searchOpenLibrary(query).then(async (open) => {
       if (open.length > 0) return open;
       return searchGoogleBooks(query);
     }),
     searchMusicBrainz(query),
+    searchMusicBrainzArtists(query),
+    searchMusicBrainzTracks(query),
   ]);
-  return { books, music };
+  return { books, music, artists, tracks };
 }
 
 export async function searchBooksWithFallback(query: string): Promise<SearchResult[]> {
@@ -134,5 +190,45 @@ export async function getReleaseCover(releaseId: string): Promise<string | undef
     return res.ok ? res.url : undefined;
   } catch {
     return undefined;
+  }
+}
+
+export async function getArtistDetails(artistId: string): Promise<Record<string, any>> {
+  try {
+    const res = await fetch(
+      `${MUSICBRAINZ_URL}/artist/${artistId}?inc=url-rels+tags+genres&fmt=json`,
+      { headers: { "User-Agent": UA } }
+    );
+    if (!res.ok) return {};
+    return res.json();
+  } catch {
+    return {};
+  }
+}
+
+export async function getArtistReleases(artistId: string): Promise<any[]> {
+  try {
+    const res = await fetch(
+      `${MUSICBRAINZ_URL}/release-group?artist=${artistId}&type=album|ep&limit=12&fmt=json`,
+      { headers: { "User-Agent": UA } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data["release-groups"] || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getRecordingDetails(recordingId: string): Promise<Record<string, any>> {
+  try {
+    const res = await fetch(
+      `${MUSICBRAINZ_URL}/recording/${recordingId}?inc=artists+releases+release-groups&fmt=json`,
+      { headers: { "User-Agent": UA } }
+    );
+    if (!res.ok) return {};
+    return res.json();
+  } catch {
+    return {};
   }
 }

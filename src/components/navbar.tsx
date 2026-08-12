@@ -48,20 +48,20 @@ export function Navbar({ session }: { session: any }) {
               </Link>
             );
           })}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                pathname.startsWith("/admin")
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Link>
-          )}
+           {isAdmin && (
+             <Link
+               href="/admin"
+               className={cn(
+                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                 pathname && pathname.startsWith("/admin")
+                   ? "bg-primary text-primary-foreground"
+                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
+               )}
+             >
+               <Settings className="h-4 w-4" />
+               <span className="hidden sm:inline">Admin</span>
+             </Link>
+           )}
         </nav>
 
         <div className="ml-auto flex items-center gap-3">

@@ -14,6 +14,20 @@ type Settings = {
     jellyfin?: { url: string; apiKey: string };
     audiobookshelf?: { url: string; apiKey: string };
     navidrome?: { url: string; username?: string; password: string };
+    readarr?: {
+      url: string;
+      apiKey: string;
+      rootFolderId?: number;
+      qualityProfileId?: number;
+      metadataProfileId?: number;
+    };
+    lidarr?: {
+      url: string;
+      apiKey: string;
+      rootFolderId?: number;
+      qualityProfileId?: number;
+      metadataProfileId?: number;
+    };
   };
 };
 
@@ -32,6 +46,20 @@ export function IntegrationsClient({ initial }: { initial: Settings }) {
       libraryIntegration: {
         ...s.libraryIntegration,
         [key]: { ...(s.libraryIntegration[key] as any), [field]: value },
+      },
+    }));
+  }
+
+  function updateIntegrationNumber(
+    key: keyof Settings["libraryIntegration"],
+    field: string,
+    value: string
+  ) {
+    setSettings((s) => ({
+      ...s,
+      libraryIntegration: {
+        ...s.libraryIntegration,
+        [key]: { ...(s.libraryIntegration[key] as any), [field]: parseInt(value, 10) || 0 },
       },
     }));
   }
@@ -168,6 +196,130 @@ export function IntegrationsClient({ initial }: { initial: Settings }) {
                 type="password"
                 value={integrations.navidrome?.password || ""}
                 onChange={(e) => updateIntegration("navidrome", "password", e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Readarr (Books)</CardTitle>
+          <CardDescription>
+            Push book requests directly to Readarr. Queries the library to check
+            for existing items and adds new books on approval.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label>Server URL</Label>
+            <Input
+              value={integrations.readarr?.url || ""}
+              onChange={(e) => updateIntegration("readarr", "url", e.target.value)}
+              placeholder="http://readarr:8787"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>API key</Label>
+            <Input
+              type="password"
+              value={integrations.readarr?.apiKey || ""}
+              onChange={(e) => updateIntegration("readarr", "apiKey", e.target.value)}
+              placeholder="Settings → General → API Key"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label>Root folder ID</Label>
+              <Input
+                type="number"
+                value={integrations.readarr?.rootFolderId || ""}
+                onChange={(e) => updateIntegrationNumber("readarr", "rootFolderId", e.target.value)}
+                placeholder="1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Quality profile ID</Label>
+              <Input
+                type="number"
+                value={integrations.readarr?.qualityProfileId || ""}
+                onChange={(e) =>
+                  updateIntegrationNumber("readarr", "qualityProfileId", e.target.value)
+                }
+                placeholder="1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Metadata profile ID</Label>
+              <Input
+                type="number"
+                value={integrations.readarr?.metadataProfileId || ""}
+                onChange={(e) =>
+                  updateIntegrationNumber("readarr", "metadataProfileId", e.target.value)
+                }
+                placeholder="1"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lidarr (Music)</CardTitle>
+          <CardDescription>
+            Push approved music requests to Lidarr. Queries the library for
+            existing albums/artists before submitting.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label>Server URL</Label>
+            <Input
+              value={integrations.lidarr?.url || ""}
+              onChange={(e) => updateIntegration("lidarr", "url", e.target.value)}
+              placeholder="http://lidarr:8686"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>API key</Label>
+            <Input
+              type="password"
+              value={integrations.lidarr?.apiKey || ""}
+              onChange={(e) => updateIntegration("lidarr", "apiKey", e.target.value)}
+              placeholder="Settings → General → API Key"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label>Root folder ID</Label>
+              <Input
+                type="number"
+                value={integrations.lidarr?.rootFolderId || ""}
+                onChange={(e) => updateIntegrationNumber("lidarr", "rootFolderId", e.target.value)}
+                placeholder="1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Quality profile ID</Label>
+              <Input
+                type="number"
+                value={integrations.lidarr?.qualityProfileId || ""}
+                onChange={(e) =>
+                  updateIntegrationNumber("lidarr", "qualityProfileId", e.target.value)
+                }
+                placeholder="1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Metadata profile ID</Label>
+              <Input
+                type="number"
+                value={integrations.lidarr?.metadataProfileId || ""}
+                onChange={(e) =>
+                  updateIntegrationNumber("lidarr", "metadataProfileId", e.target.value)
+                }
+                placeholder="1"
               />
             </div>
           </div>
