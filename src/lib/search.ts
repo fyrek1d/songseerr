@@ -57,10 +57,10 @@ export async function searchGoogleBooks(query: string): Promise<SearchResult[]> 
   }
 }
 
-export async function searchMusicBrainz(query: string): Promise<SearchResult[]> {
+export async function searchMusicBrainz(query: string, limit = 12, offset = 0): Promise<SearchResult[]> {
   try {
     const res = await fetch(
-      `${MUSICBRAINZ_URL}/release/?query=${encodeURIComponent(query)}&fmt=json&limit=12`,
+      `${MUSICBRAINZ_URL}/release/?query=${encodeURIComponent(query)}&fmt=json&limit=${limit}&offset=${offset}`,
       { headers: { "User-Agent": UA } }
     );
     if (!res.ok) return [];

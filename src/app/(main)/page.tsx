@@ -1,23 +1,37 @@
 import { SearchBar } from "@/components/search-bar";
 import { MediaCard } from "@/components/media-card";
-import { searchOpenLibrary, searchMusicBrainz } from "@/lib/search";
+import {
+  getPopularBooks,
+  getPopularMusic,
+  getTodayBookCategories,
+  getTodayMusicGenres,
+} from "@/lib/discover";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+
+// Re-render periodically so the daily-rotated discovery picks stay fresh
+// without a full rebuild.
+export const revalidate = 21600;
 
 const DISCOVER_QUERIES = [
   { label: "Popular Fiction", query: "fiction bestseller" },
   { label: "New Nonfiction", query: "nonfiction 2024" },
   { label: "Classic Literature", query: "classic literature" },
-  { label: "Jazz", query: "jazz" },
   { label: "Rock Classics", query: "rock classic album" },
   { label: "Electronic", query: "electronic music" },
+  { label: "Jazz", query: "jazz" },
 ];
 
 export default async function DiscoverPage() {
-  const [books, music] = await Promise.all([
-    searchOpenLibrary("fiction bestseller"),
-    searchMusicBrainz("jazz"),
+  const [books, music, todayBooks, todayMusic] = await Promise.all([
+    getPopularBooks(),
+    getPopularMusic(),
+    getTodayBookCategories(),
+    getTodayMusicGenres(),
   ]);
+
+  const booksSubtitle = todayBooks.map((b) => b.label).join(", ");
+  const musicSubtitle = todayMusic.map((m) => m.label).join(", ");
 
   return (
     <div className="space-y-10">
@@ -33,13 +47,19 @@ export default async function DiscoverPage() {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Popular Books</h2>
-          <Link href="/search?q=fiction" className="flex items-center text-sm text-primary hover:underline">
+          <div>
+            <h2 className="text-2xl font-semibold">Popular Books</h2>
+            <p className="text-sm text-muted-foreground">Today: {booksSubtitle}</p>
+          </div>
+          <Link
+            href={`/search?q=${encodeURIComponent(todayBooks[0]?.query ?? "fiction")}`}
+            className="flex items-center text-sm text-primary hover:underline"
+          >
             See all <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {books.slice(0, 6).map((book) => (
+          {books.map((book) => (
             <MediaCard key={book.id} {...book} />
           ))}
         </div>
@@ -47,13 +67,19 @@ export default async function DiscoverPage() {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Popular Music</h2>
-          <Link href="/search?q=jazz" className="flex items-center text-sm text-primary hover:underline">
+          <div>
+            <h2 className="text-2xl font-semibold">Popular Music</h2>
+            <p className="text-sm text-muted-foreground">Today: {musicSubtitle}</p>
+          </div>
+          <Link
+            href={`/search?q=${encodeURIComponent(todayMusic[0]?.label ?? "rock")}`}
+            className="flex items-center text-sm text-primary hover:underline"
+          >
             See all <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {music.slice(0, 6).map((release) => (
+          {music.map((release) => (
             <MediaCard key={release.id} {...release} />
           ))}
         </div>
