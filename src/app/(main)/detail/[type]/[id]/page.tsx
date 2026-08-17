@@ -13,9 +13,10 @@ import {
 } from "@/lib/search";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { ReportIssueButton } from "@/components/report-issue-button";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 const formatMs = (ms: number) =>
   `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, "0")}`;
@@ -58,9 +59,7 @@ export default async function DetailPage({
 
     return (
       <div className="space-y-8">
-        <Button variant="ghost" size="sm" className="gap-1" render={<Link href="/" />}>
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
+        <BackButton />
 
         <div className="flex flex-col gap-8 md:flex-row">
           <div className="w-56 shrink-0">
@@ -157,9 +156,7 @@ export default async function DetailPage({
 
     return (
       <div className="space-y-8">
-        <Button variant="ghost" size="sm" className="gap-1" render={<Link href="/" />}>
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
+        <BackButton />
 
         <div className="flex flex-col gap-8 md:flex-row">
           <div className="w-56 shrink-0">
@@ -253,9 +250,7 @@ export default async function DetailPage({
 
     return (
       <div className="space-y-8">
-        <Button variant="ghost" size="sm" className="gap-1" render={<Link href="/" />}>
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
+        <BackButton />
 
         <div className="flex flex-col gap-8 md:flex-row">
           <div className="w-56 shrink-0">
@@ -380,9 +375,7 @@ export default async function DetailPage({
 
   return (
     <div className="space-y-8">
-      <Button variant="ghost" size="sm" className="gap-1" render={<Link href="/" />}>
-        <ArrowLeft className="h-4 w-4" /> Back
-      </Button>
+      <BackButton />
 
       <div className="flex flex-col gap-8 md:flex-row">
         <div className="w-56 shrink-0">

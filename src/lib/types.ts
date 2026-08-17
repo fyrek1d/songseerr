@@ -8,6 +8,7 @@ export interface SearchResult {
   coverUrl?: string;
   externalUrl?: string;
   year?: number;
+  popularity?: number;
   details: Record<string, any>;
 }
 

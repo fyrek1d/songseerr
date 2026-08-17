@@ -12,7 +12,7 @@ type IconName = "book" | "music" | "artist" | "track";
 
 interface MediaCardProps {
   id: string;
-  type: "book" | "music" | "artist" | "track";
+  type: string;
   title: string;
   subtitle?: string;
   coverUrl?: string;
@@ -21,12 +21,12 @@ interface MediaCardProps {
   icon?: IconName;
 }
 
-const typeConfig = {
+const typeConfig: Record<string, { label: string; icon: LucideIcon }> = {
   book: { label: "Book", icon: BookOpen },
   music: { label: "Album", icon: Music },
   artist: { label: "Artist", icon: Users },
   track: { label: "Track", icon: Music2 },
-} as const;
+};
 
 const iconMap: Record<IconName, LucideIcon> = {
   book: BookOpen,
@@ -43,10 +43,10 @@ export function CoverImage({
 }: {
   coverUrl?: string;
   title: string;
-  type: "book" | "music" | "artist" | "track";
+  type: string;
   className?: string;
 }) {
-  const config = typeConfig[type];
+  const config = typeConfig[type] ?? { label: "Item", icon: BookOpen };
   const Icon = config.icon;
   const [failed, setFailed] = useState(false);
   return (
@@ -85,7 +85,7 @@ export function MediaCard({
   className,
   icon,
 }: MediaCardProps) {
-  const config = typeConfig[type];
+  const config = typeConfig[type] ?? { label: "Item", icon: BookOpen };
   const BadgeIcon = icon ? iconMap[icon] : config.icon;
   return (
     <Link href={`/detail/${type}/${id}`} className={cn("group block", className)}>

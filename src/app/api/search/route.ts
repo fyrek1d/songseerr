@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unifiedSearch, searchOpenLibrary, searchGoogleBooks, searchMusicBrainz, searchMusicBrainzArtists, searchMusicBrainzTracks } from "@/lib/search";
+import { unifiedSearch, searchOpenLibrary, searchMusicBrainz, searchMusicBrainzArtists, searchMusicBrainzTracks, searchBooks, sleep } from "@/lib/search";
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q");
@@ -15,13 +15,14 @@ export async function GET(request: NextRequest) {
       let books: any[] = [];
       if (field === "author") {
         books = await searchOpenLibrary(`author:"${query}"`);
+        if (books.length === 0) books = await searchBooks(query);
       } else if (field === "title") {
         books = await searchOpenLibrary(`title:"${query}"`);
+        if (books.length === 0) books = await searchBooks(query);
       } else if (field === "series") {
-        books = await searchOpenLibrary(query);
+        books = await searchBooks(query);
       } else {
-        books = await searchOpenLibrary(query);
-        if (books.length === 0) books = await searchGoogleBooks(query);
+        books = await searchBooks(query);
       }
       return NextResponse.json({ books, music: [], artists: [], tracks: [] });
     }
@@ -37,11 +38,12 @@ export async function GET(request: NextRequest) {
       } else if (field === "track") {
         tracks = await searchMusicBrainzTracks(query);
       } else {
-        [music, artists, tracks] = await Promise.all([
-          searchMusicBrainz(query),
-          searchMusicBrainzArtists(query),
-          searchMusicBrainzTracks(query),
-        ]);
+        // MusicBrainz rate-limits to ~1 req/sec: serialize the three lookups
+        music = await searchMusicBrainz(query);
+        await sleep(400);
+        artists = await searchMusicBrainzArtists(query);
+        await sleep(400);
+        tracks = await searchMusicBrainzTracks(query);
       }
       return NextResponse.json({ books: [], music, artists, tracks });
     }
