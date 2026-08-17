@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/back-button";
 
 const adminLinks = [
   { href: "/admin", label: "Dashboard", exact: true },
@@ -39,7 +40,10 @@ export default async function AdminLayout({
           ))}
         </nav>
       </aside>
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-6">
+        <BackButton />
+        <div className="mt-4">{children}</div>
+      </main>
     </div>
   );
 }
