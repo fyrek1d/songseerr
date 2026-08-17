@@ -179,18 +179,23 @@ export async function pushToLidarr(title: string, externalId: string, artistName
   const roots = await arrRequest(config.url, config.apiKey, "/api/v1/rootfolder");
   const rootPath = Array.isArray(roots) && roots.length > 0 ? roots[0].path : "/music";
 
+  // Track requests pass "Artist — Album" as the subtitle; reduce it to the artist name only
+  const cleanArtistName = (artistName || "").split(/\s*—\s*/)[0].trim() || artistName;
+
   const searchResults = await arrRequest(
     config.url,
     config.apiKey,
-    `/api/v1/search?term=${encodeURIComponent(artistName || title)}`
+    `/api/v1/search?term=${encodeURIComponent(cleanArtistName || title)}`
   );
+
+  const term = (cleanArtistName || title).toLowerCase();
 
   const match = Array.isArray(searchResults)
     ? searchResults.find(
         (r: any) =>
           r.foreignId === externalId ||
           r.artist?.foreignArtistId === externalId ||
-          r.artist?.artistName?.toLowerCase().includes((artistName || title).toLowerCase())
+          r.artist?.artistName?.toLowerCase().includes(term)
       )
     : null;
 

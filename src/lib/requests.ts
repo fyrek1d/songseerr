@@ -75,7 +75,7 @@ export async function createRequest(data: {
   const user = await prisma.user.findUnique({ where: { id: data.userId } });
   if (!user) return { status: 404, error: "User not found." };
 
-  const approved = settings.autoApproveTrusted && user.role === "trusted";
+  const approved = settings.autoApproveTrusted && (user.role === "trusted" || user.role === "admin");
 
   const request = await prisma.request.create({
     data: {
@@ -91,6 +91,7 @@ export async function createRequest(data: {
       type: request.type,
       requestedBy: user.username,
     });
+    pushRequestToArr(request);
   }
 
   return { status: 201, request };
@@ -133,21 +134,7 @@ export async function updateRequestStatus(
   });
 
   if (status === REQUEST_STATUS.APPROVED) {
-    if (request.type === "book") {
-      import("./arr").then(({ pushToReadarr }) =>
-        pushToReadarr(request.title, request.externalId, request.subtitle || undefined)
-      );
-    } else if (request.type === "music" || request.type === "artist") {
-      import("./arr").then(({ pushToLidarr }) =>
-        pushToLidarr(request.title, request.externalId, request.subtitle || undefined)
-      );
-    }
-    // For tracks, we push the album (externalId should be the release ID)
-    else if (request.type === "track") {
-      import("./arr").then(({ pushToLidarr }) =>
-        pushToLidarr(request.title, request.externalId, request.subtitle || undefined)
-      );
-    }
+    pushRequestToArr(request);
   }
 
   notifyWebhook("request-" + status, {
@@ -157,6 +144,23 @@ export async function updateRequestStatus(
   });
 
   return { status: 200, request };
+}
+
+export async function pushRequestToArr(request: {
+  type: string;
+  title: string;
+  subtitle?: string | null;
+  externalId: string;
+}) {
+  import("./arr").then(({ pushToReadarr, pushToLidarr }) => {
+    if (request.type === "book") {
+      return pushToReadarr(request.title, request.externalId, request.subtitle || undefined);
+    }
+    if (request.type === "music" || request.type === "artist" || request.type === "track") {
+      return pushToLidarr(request.title, request.externalId, request.subtitle || undefined);
+    }
+    return undefined;
+  });
 }
 
 export async function notifyWebhook(event: string, payload: Record<string, any>) {

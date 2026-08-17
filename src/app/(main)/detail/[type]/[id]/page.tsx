@@ -293,7 +293,7 @@ export default async function DetailPage({
                 item={{
                   type: "artist",
                   title: details.name,
-                  subtitle: "Add artist to music library",
+                  subtitle: details.name,
                   externalId: id,
                   externalUrl: `https://musicbrainz.org/artist/${id}`,
                 }}
