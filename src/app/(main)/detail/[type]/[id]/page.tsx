@@ -3,7 +3,6 @@ import { CoverImage } from "@/components/media-card";
 import { RequestButton } from "@/components/request-button";
 import { prisma } from "@/lib/prisma";
 import {
-  getBookDetails,
   getReleaseDetails,
   getReleaseTracks,
   getReleaseCover,
@@ -27,112 +26,7 @@ export default async function DetailPage({
   params: { type: string; id: string };
 }) {
   const { type, id } = params;
-  if (!["book", "music", "artist", "track"].includes(type)) redirect("/");
-
-  if (type === "book") {
-    const details = await getBookDetails(id);
-    if (!details || !details.title) redirect("/");
-
-    const coverId = details.covers?.[0];
-    const coverUrl = coverId
-      ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
-      : undefined;
-
-    const authors = details.authors || [];
-    const authorNames: string[] = [];
-    for (const a of authors) {
-      if (a?.author?.key) {
-        try {
-          const res = await fetch(`https://openlibrary.org${a.author.key}.json`);
-          const data = await res.json();
-          if (data.name) authorNames.push(data.name);
-        } catch {}
-      }
-    }
-
-    const alreadyInLibrary = await prisma.libraryItem.findFirst({
-      where: { externalId: id, type: "book" },
-    });
-    const alreadyRequested = await prisma.request.findFirst({
-      where: { externalId: id, type: "book", status: { in: ["pending", "approved"] } },
-    });
-
-    return (
-      <div className="space-y-8">
-        <BackButton />
-
-        <div className="flex flex-col gap-8 md:flex-row">
-          <div className="w-56 shrink-0">
-            <CoverImage coverUrl={coverUrl} title={details.title} type="book" />
-          </div>
-
-          <div className="flex-1 space-y-4">
-            <div>
-              <h1 className="text-3xl font-bold">{details.title}</h1>
-              {authorNames.length > 0 && (
-                <p className="mt-1 text-lg text-muted-foreground">
-                  by {authorNames.join(", ")}
-                </p>
-              )}
-            </div>
-
-            {details.subtitle && <p className="text-muted-foreground">{details.subtitle}</p>}
-
-            {details.description && (
-              <p className="max-w-2xl leading-relaxed text-muted-foreground">
-                {typeof details.description === "string"
-                  ? details.description
-                  : details.description.value}
-              </p>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-              {details.subject_places?.slice(0, 3).map((s: string) => (
-                <Badge key={s} variant="secondary">{s}</Badge>
-              ))}
-              {details.first_publish_date && (
-                <Badge variant="outline">{details.first_publish_date}</Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <RequestButton
-                item={{
-                  type: "book",
-                  title: details.title,
-                  subtitle: authorNames.join(", ") || undefined,
-                  coverUrl,
-                  externalId: id,
-                  externalUrl: `https://openlibrary.org/works/${id}`,
-                }}
-                disabled={!!alreadyInLibrary || !!alreadyRequested}
-              />
-              {alreadyInLibrary && <Badge variant="success">Already in library</Badge>}
-              {alreadyRequested && <Badge variant="outline">Requested</Badge>}
-              <Button
-                variant="outline"
-                className="gap-1"
-                render={
-                  <a
-                    href={`https://openlibrary.org/works/${id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                }
-              >
-                <ExternalLink className="h-4 w-4" /> Open Library
-              </Button>
-              <ReportIssueButton
-                itemTitle={details.title}
-                itemType="book"
-                itemId={id}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!["music", "artist", "track"].includes(type)) redirect("/");
 
   if (type === "music") {
     const details = await getReleaseDetails(id);
@@ -343,8 +237,8 @@ export default async function DetailPage({
                         </p>
                       )}
                     </div>
+                    <Badge variant="secondary">{rg["primary-type"] || "Release"}</Badge>
                   </div>
-                  <Badge variant="secondary">{rg["primary-type"] || "Release"}</Badge>
                 </li>
               ))}
             </ol>
@@ -353,7 +247,6 @@ export default async function DetailPage({
       </div>
     );
   }
-
   // track
   const details = await getRecordingDetails(id);
   if (!details || !details.title) redirect("/");
@@ -369,7 +262,7 @@ export default async function DetailPage({
     where: {
       externalId: release?.id || id,
       type: "track",
-      status: { in: ["pending", "approved"] },
+      status: { in: ["pending", "approved"] }
     },
   });
 

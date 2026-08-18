@@ -1,8 +1,6 @@
 import { prisma } from "./prisma";
 
 export interface AppSettingsData {
-  openLibraryEnabled: boolean;
-  googleBooksEnabled: boolean;
   musicBrainzEnabled: boolean;
   autoApproveTrusted: boolean;
   requestLimit: number;
@@ -12,21 +10,10 @@ export interface AppSettingsData {
       url: string;
       apiKey: string;
     };
-    audiobookshelf?: {
-      url: string;
-      apiKey: string;
-    };
     navidrome?: {
       url: string;
       password: string;
       username?: string;
-    };
-    readarr?: {
-      url: string;
-      apiKey: string;
-      rootFolderId?: number;
-      qualityProfileId?: number;
-      metadataProfileId?: number;
     };
     lidarr?: {
       url: string;
@@ -39,8 +26,6 @@ export interface AppSettingsData {
 }
 
 export const DEFAULT_SETTINGS: AppSettingsData = {
-  openLibraryEnabled: true,
-  googleBooksEnabled: true,
   musicBrainzEnabled: true,
   autoApproveTrusted: false,
   requestLimit: 10,
@@ -72,8 +57,8 @@ export async function getJellyfinConfig() {
 }
 
 export async function getAudiobookshelfConfig() {
-  const settings = await getSettings();
-  return settings.libraryIntegration.audiobookshelf;
+  // Audiobookshelf functionality removed - music only
+  return undefined;
 }
 
 export async function getNavidromeConfig() {
@@ -82,8 +67,8 @@ export async function getNavidromeConfig() {
 }
 
 export async function getReadarrConfig() {
-  const settings = await getSettings();
-  return settings.libraryIntegration.readarr;
+  // Readarr functionality removed - music only
+  return undefined;
 }
 
 export async function getLidarrConfig() {

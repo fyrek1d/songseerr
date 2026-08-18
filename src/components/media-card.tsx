@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Music, Users, Music2, LucideIcon } from "lucide-react";
+import { Music, Users, Music2, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type IconName = "book" | "music" | "artist" | "track";
+type IconName = "music" | "artist" | "track";
 
 interface MediaCardProps {
   id: string;
@@ -22,14 +22,12 @@ interface MediaCardProps {
 }
 
 const typeConfig: Record<string, { label: string; icon: LucideIcon }> = {
-  book: { label: "Book", icon: BookOpen },
   music: { label: "Album", icon: Music },
   artist: { label: "Artist", icon: Users },
   track: { label: "Track", icon: Music2 },
 };
 
 const iconMap: Record<IconName, LucideIcon> = {
-  book: BookOpen,
   music: Music,
   artist: Users,
   track: Music2,
@@ -46,7 +44,7 @@ export function CoverImage({
   type: string;
   className?: string;
 }) {
-  const config = typeConfig[type] ?? { label: "Item", icon: BookOpen };
+  const config = typeConfig[type] ?? { label: "Item", icon: Music };
   const Icon = config.icon;
   const [failed, setFailed] = useState(false);
   return (
@@ -85,7 +83,7 @@ export function MediaCard({
   className,
   icon,
 }: MediaCardProps) {
-  const config = typeConfig[type] ?? { label: "Item", icon: BookOpen };
+  const config = typeConfig[type] ?? { label: "Item", icon: Music };
   const BadgeIcon = icon ? iconMap[icon] : config.icon;
   return (
     <Link href={`/detail/${type}/${id}`} className={cn("group block", className)}>

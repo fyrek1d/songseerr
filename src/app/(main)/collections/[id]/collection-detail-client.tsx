@@ -55,7 +55,7 @@ export function CollectionDetailClient({
     setSearching(true);
     const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
     const data = await res.json();
-    setResults([...data.books, ...data.music]);
+    setResults([...data.music, ...data.artists, ...data.tracks]);
     setSearching(false);
   }
 
@@ -126,7 +126,7 @@ export function CollectionDetailClient({
                   <Input
                     value={query}
                     onChange={(e) => search(e.target.value)}
-                    placeholder="Search books and music..."
+                    placeholder="Search music..."
                     className="pl-9"
                     autoFocus
                   />
@@ -175,7 +175,7 @@ export function CollectionDetailClient({
             <CoverImage
               coverUrl={item.coverUrl}
               title={item.title}
-              type={item.type as "book" | "music"}
+              type={item.type as "music" | "artist" | "track"}
             />
             <div className="p-2">
               <p className="line-clamp-1 text-sm font-medium">{item.title}</p>

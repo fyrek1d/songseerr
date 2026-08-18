@@ -3,13 +3,6 @@ import { headers } from "next/headers";
 import SearchResults from "./search-results";
 
 // Used for types and runtime values
-const BOOK_FIELDS = [
-  { value: "", label: "All fields" },
-  { value: "title", label: "Title" },
-  { value: "author", label: "Author" },
-  { value: "series", label: "Series" },
-];
-
 const MUSIC_FIELDS = [
   { value: "", label: "All fields" },
   { value: "album", label: "Album" },
@@ -17,7 +10,6 @@ const MUSIC_FIELDS = [
   { value: "track", label: "Track" },
 ];
 
-type BookField = typeof BOOK_FIELDS[number]["value"];
 type MusicField = typeof MUSIC_FIELDS[number]["value"];
 
 function getBaseUrl() {
@@ -27,7 +19,7 @@ function getBaseUrl() {
   return `${proto}://${host}`;
 }
 
-async function searchApi(query: string, category: SearchCategory, field?: BookField | MusicField) {
+async function searchApi(query: string, category: SearchCategory, field?: MusicField) {
   const params = new URLSearchParams({ q: query, category });
   if (field) params.set("field", field);
   const baseUrl = getBaseUrl();
@@ -45,8 +37,8 @@ export default async function SearchPage({
 }) {
   const { q, category: catParam, field: fieldParam } = await searchParams;
   const query = q;
-  const category = (catParam as SearchCategory) || "books";
-  const field = fieldParam as BookField | MusicField | "";
+  const category = (catParam as SearchCategory) || "music";
+  const field = fieldParam as MusicField | "";
 
   if (!query) {
     return (
@@ -55,14 +47,13 @@ export default async function SearchPage({
         <div className="max-w-xl">
           <SearchBarComponent initialCategory={category} />
         </div>
-        <p className="text-muted-foreground">Search for books and music across the web.</p>
+        <p className="text-muted-foreground">Search for music across the web.</p>
       </div>
     );
   }
 
   const results = await searchApi(query, category, field);
 
-  const books = results.books || [];
   const music = results.music || [];
   const artists = results.artists || [];
   const tracks = results.tracks || [];
@@ -72,7 +63,6 @@ export default async function SearchPage({
       query={query}
       category={category}
       field={field}
-      initialBooks={books}
       initialMusic={music}
       initialArtists={artists}
       initialTracks={tracks}

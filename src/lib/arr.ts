@@ -1,14 +1,5 @@
-import { getReadarrConfig, getLidarrConfig } from "./settings";
+import { getLidarrConfig } from "./settings";
 import type { LibraryItemInput } from "./integrations";
-
-interface ArrBook {
-  id: number;
-  title: string;
-  author?: { authorName?: string; title?: string };
-  images?: Array<{ url: string; coverType: string }>;
-  foreignBookId?: string;
-  authorId: number;
-}
 
 interface ArrAlbum {
   id: number;
@@ -64,10 +55,8 @@ async function arrPut(baseUrl: string, apiKey: string, path: string, body: any) 
 }
 
 export async function searchReadarr(query: string): Promise<ArrSearchResult[]> {
-  const config = await getReadarrConfig();
-  if (!config?.url || !config?.apiKey) return [];
-  const data = await arrRequest(config.url, config.apiKey, `/api/v1/search?term=${encodeURIComponent(query)}`);
-  return Array.isArray(data) ? data : [];
+  // Readarr functionality removed - music only
+  return [];
 }
 
 export async function searchLidarr(query: string): Promise<ArrSearchResult[]> {
@@ -78,11 +67,8 @@ export async function searchLidarr(query: string): Promise<ArrSearchResult[]> {
 }
 
 export async function hasInReadarr(externalId: string): Promise<boolean> {
-  const config = await getReadarrConfig();
-  if (!config?.url || !config?.apiKey) return false;
-  const data = await arrRequest(config.url, config.apiKey, `/api/v1/book?foreignBookId=${encodeURIComponent(externalId)}`);
-  if (!Array.isArray(data)) return false;
-  return data.some((book: any) => book.foreignBookId === externalId);
+  // Readarr functionality removed - music only
+  return false;
 }
 
 export async function hasInLidarr(externalId: string, type?: string): Promise<boolean> {
@@ -104,70 +90,8 @@ export async function hasInLidarr(externalId: string, type?: string): Promise<bo
 }
 
 export async function pushToReadarr(title: string, externalId: string, authorName?: string): Promise<boolean> {
-  const config = await getReadarrConfig();
-  if (!config?.url || !config?.apiKey) return false;
-
-  const qualityProfileId = config.qualityProfileId || 1;
-  const metadataProfileId = config.metadataProfileId || 1;
-  const rootFolderId = config.rootFolderId || 1;
-
-  const roots = await arrRequest(config.url, config.apiKey, "/api/v1/rootfolder");
-  const rootPath = Array.isArray(roots) && roots.length > 0 ? roots[0].path : "/books";
-
-  const searchResults = await arrRequest(
-    config.url,
-    config.apiKey,
-    `/api/v1/search?term=${encodeURIComponent(authorName || title)}`
-  );
-
-  const match = Array.isArray(searchResults)
-    ? searchResults.find(
-        (r: any) =>
-          r.foreignId === externalId ||
-          r.author?.foreignAuthorId === externalId ||
-          r.author?.authorName?.toLowerCase().includes(title.toLowerCase())
-      )
-    : null;
-
-  if (!match || !match.author) return false;
-
-  const authorPayload = {
-    ...match.author,
-    status: "continuing",
-    monitorNewItems: "all" as const,
-    monitored: true,
-    qualityProfileId,
-    metadataProfileId,
-    rootFolderPath: rootPath,
-    addOptions: {
-      monitor: "all" as const,
-      searchForMissingBooks: true,
-    },
-  };
-
-  delete (authorPayload as any).id;
-  delete (authorPayload as any).authorMetadataId;
-
-  const result = await arrPost(
-    config.url,
-    config.apiKey,
-    "/api/v1/author",
-    authorPayload
-  );
-
-  if (!result) {
-    const existing = await arrRequest(
-      config.url,
-      config.apiKey,
-      `/api/v1/author?foreignAuthorId=${encodeURIComponent(match.author.foreignAuthorId)}`
-    );
-    if (Array.isArray(existing) && existing.length > 0) {
-      const author = existing[0];
-      return !!author;
-    }
-  }
-
-  return !!result;
+  // Readarr functionality removed - music only
+  return false;
 }
 export async function pushToLidarr(title: string, externalId: string, artistName?: string): Promise<boolean> {
   const config = await getLidarrConfig();
@@ -240,27 +164,8 @@ export async function pushToLidarr(title: string, externalId: string, artistName
 }
 
 export async function scanReadarr(): Promise<LibraryItemInput[]> {
-  const config = await getReadarrConfig();
-  if (!config?.url || !config?.apiKey) return [];
-  const items: LibraryItemInput[] = [];
-
-  const books = await arrRequest(config.url, config.apiKey, "/api/v1/book");
-  for (const book of (Array.isArray(books) ? books : [])) {
-    if (!book.title) continue;
-    const authorName = book.authorTitle
-      ? book.authorTitle.split(" " + book.title)[0]
-      : undefined;
-
-    items.push({
-      title: book.title,
-      artist: authorName || book.author?.authorName || undefined,
-      type: "book",
-      externalId: book.foreignBookId || String(book.id),
-      source: "readarr",
-      coverUrl: undefined,
-    });
-  }
-  return items;
+  // Readarr functionality removed - music only
+  return [];
 }
 
 export async function scanLidarr(): Promise<LibraryItemInput[]> {

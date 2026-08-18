@@ -45,9 +45,9 @@ export default function LoginForm() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <BookOpen className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl">Welcome to MediaSeer</CardTitle>
+          <CardTitle className="text-2xl">Welcome to SongSeerr</CardTitle>
           <CardDescription>
-            Unified book & music requests for your media stack
+            Unified music requests for your media stack
           </CardDescription>
         </CardHeader>
         <CardContent>

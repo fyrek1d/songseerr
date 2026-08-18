@@ -26,7 +26,7 @@ export function LibraryClient({
   isAdmin,
 }: {
   items: LibraryItem[];
-  counts: { book: number; music: number };
+  counts: { music: number };
   isAdmin: boolean;
 }) {
   const router = useRouter();
@@ -85,21 +85,16 @@ export function LibraryClient({
       </div>
 
       <div className="flex gap-2">
-        <Badge variant="outline">{counts.book} books</Badge>
         <Badge variant="outline">{counts.music} music items</Badge>
       </div>
 
       <Tabs defaultValue="all">
         <TabsList>
           <TabsTrigger value="all">All ({items.length})</TabsTrigger>
-          <TabsTrigger value="book">Books ({counts.book})</TabsTrigger>
           <TabsTrigger value="music">Music ({counts.music})</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-4">
           <ItemGrid items={filtered} />
-        </TabsContent>
-        <TabsContent value="book" className="mt-4">
-          <ItemGrid items={filtered.filter((i) => i.type === "book")} />
         </TabsContent>
         <TabsContent value="music" className="mt-4">
           <ItemGrid items={filtered.filter((i) => i.type === "music")} />
@@ -120,7 +115,7 @@ function ItemGrid({ items }: { items: LibraryItem[] }) {
           <CoverImage
             coverUrl={item.coverUrl}
             title={item.title}
-            type={item.type as "book" | "music"}
+            type={item.type as "music" | "artist" | "track"}
           />
           <div className="p-2">
             <p className="line-clamp-1 text-sm font-medium">{item.title}</p>

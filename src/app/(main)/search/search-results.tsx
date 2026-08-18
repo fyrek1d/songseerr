@@ -7,22 +7,14 @@ import { FilterButtons } from "@/components/filter-buttons";
 
 interface SearchResultsProps {
   query: string;
-  category: "books" | "music";
+  category: "music";
   field: string;
-  initialBooks: any[];
   initialMusic: any[];
   initialArtists: any[];
   initialTracks: any[];
 }
 
-export default function SearchResults({ query, category, field, initialBooks, initialMusic, initialArtists, initialTracks }: SearchResultsProps) {
-  const BOOK_FIELDS = [
-    { value: "", label: "All fields" },
-    { value: "title", label: "Title" },
-    { value: "author", label: "Author" },
-    { value: "series", label: "Series" },
-  ] as const;
-
+export default function SearchResults({ query, category, field, initialMusic, initialArtists, initialTracks }: SearchResultsProps) {
   const MUSIC_FIELDS = [
     { value: "", label: "All fields" },
     { value: "album", label: "Album" },
@@ -30,33 +22,31 @@ export default function SearchResults({ query, category, field, initialBooks, in
     { value: "track", label: "Track" },
   ] as const;
 
-  const fields = category === "books" ? BOOK_FIELDS : MUSIC_FIELDS;
+  const fields = MUSIC_FIELDS;
   const activeField = field || "all";
 
   const results = useMemo(() => {
-    const combined = [...initialBooks, ...initialMusic, ...initialArtists, ...initialTracks];
+    const combined = [...initialMusic, ...initialArtists, ...initialTracks];
     return combined.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0));
-  }, [initialBooks, initialMusic, initialArtists, initialTracks]);
+  }, [initialMusic, initialArtists, initialTracks]);
 
   const total = results.length;
 
   const getIcon = (type: string) => {
     switch (type) {
-      case "book": return "book";
       case "music": return "music";
       case "artist": return "artist";
       case "track": return "track";
-      default: return "book";
+      default: return "music";
     }
   };
 
   const getIdPrefix = (type: string) => {
     switch (type) {
-      case "book": return "b";
       case "music": return "m";
       case "artist": return "a";
       case "track": return "t";
-      default: return "b";
+      default: return "m";
     }
   };
 
@@ -64,7 +54,7 @@ export default function SearchResults({ query, category, field, initialBooks, in
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">
-          Results for "{query}" {category === "books" ? "(Books)" : "(Music)"}
+          Results for "{query}" (Music)
         </h1>
         <div className="max-w-md flex-1">
           <SearchBarComponent initialValue={query} initialCategory={category} />
@@ -78,7 +68,7 @@ export default function SearchResults({ query, category, field, initialBooks, in
           <FilterButtons fields={fields} activeField={activeField} query={query} category={category} />
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {results.map((item: any) => {
-              const type = item.type || (category === "books" ? "book" : "music");
+              const type = item.type || "music";
               return (
                 <MediaCard key={`${getIdPrefix(type)}-${item.id}`} {...item} icon={getIcon(type)} />
               );

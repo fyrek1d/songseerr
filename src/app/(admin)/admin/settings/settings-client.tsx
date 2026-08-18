@@ -11,8 +11,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { Save } from "lucide-react";
 
 type Settings = {
-  openLibraryEnabled: boolean;
-  googleBooksEnabled: boolean;
   musicBrainzEnabled: boolean;
   autoApproveTrusted: boolean;
   requestLimit: number;
@@ -58,31 +56,12 @@ export function SettingsClient({ initial }: { initial: Settings }) {
         <CardHeader>
           <CardTitle>Metadata providers</CardTitle>
           <CardDescription>
-            Enable/disable search providers. Open Library is primary for books; Google
-            Books is the fallback. MusicBrainz powers music discovery.
+MusicBrainz powers music discovery and metadata.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Open Library</Label>
-              <p className="text-xs text-muted-foreground">Primary book metadata source</p>
-            </div>
-            <Switch
-              checked={settings.openLibraryEnabled}
-              onCheckedChange={(v) => update("openLibraryEnabled", v)}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Google Books</Label>
-              <p className="text-xs text-muted-foreground">Fallback book metadata source</p>
-            </div>
-            <Switch
-              checked={settings.googleBooksEnabled}
-              onCheckedChange={(v) => update("googleBooksEnabled", v)}
-            />
-          </div>
+          
+          
           <div className="flex items-center justify-between">
             <div>
               <Label>MusicBrainz</Label>

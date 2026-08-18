@@ -45,13 +45,7 @@ export async function createRequest(data: {
     return { status: 409, error: "Item already in library." };
   }
 
-  if (data.type === "book") {
-    const { hasInReadarr } = await import("./arr");
-    const inReadarr = await hasInReadarr(data.externalId);
-    if (inReadarr) {
-      return { status: 409, error: "Item already in Readarr." };
-    }
-  } else if (data.type === "music") {
+  if (data.type === "music") {
     const { hasInLidarr } = await import("./arr");
     const inLidarr = await hasInLidarr(data.externalId);
     if (inLidarr) {
@@ -152,10 +146,7 @@ export async function pushRequestToArr(request: {
   subtitle?: string | null;
   externalId: string;
 }) {
-  import("./arr").then(({ pushToReadarr, pushToLidarr }) => {
-    if (request.type === "book") {
-      return pushToReadarr(request.title, request.externalId, request.subtitle || undefined);
-    }
+  import("./arr").then(({ pushToLidarr }) => {
     if (request.type === "music" || request.type === "artist" || request.type === "track") {
       return pushToLidarr(request.title, request.externalId, request.subtitle || undefined);
     }

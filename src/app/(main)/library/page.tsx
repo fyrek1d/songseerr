@@ -19,7 +19,6 @@ export default async function LibraryPage({
   });
 
   const counts = {
-    book: await prisma.libraryItem.count({ where: { type: "book" } }),
     music: await prisma.libraryItem.count({ where: { type: "music" } }),
   };
 

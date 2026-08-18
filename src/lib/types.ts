@@ -1,4 +1,4 @@
-export type MediaType = "book" | "music" | "artist" | "track";
+export type MediaType = "music" | "artist" | "track";
 
 export interface SearchResult {
   id: string;

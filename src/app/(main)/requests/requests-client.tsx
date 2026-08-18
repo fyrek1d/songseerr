@@ -70,12 +70,12 @@ export function RequestsClient({
     return (
       <div className="flex items-center gap-4 rounded-lg border bg-card p-3">
         <div className="w-12 shrink-0">
-          <CoverImage
-            coverUrl={r.coverUrl}
-            title={r.title}
-            type={r.type as "book" | "music"}
-            className="aspect-[2/3] rounded-sm"
-          />
+<CoverImage
+             coverUrl={r.coverUrl}
+             title={r.title}
+             type={r.type as "music" | "artist" | "track"}
+             className="aspect-[2/3] rounded-sm"
+           />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{r.title}</p>

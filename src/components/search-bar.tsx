@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type SearchCategory = "books" | "music";
+export type SearchCategory = "music";
 
-export function SearchBar({ initialValue = "", initialCategory = "books" }: { initialValue?: string; initialCategory?: SearchCategory }) {
+export function SearchBar({ initialValue = "", initialCategory = "music" }: { initialValue?: string; initialCategory?: SearchCategory }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialValue);
   const [category, setCategory] = useState<SearchCategory>(initialCategory);
@@ -33,7 +33,6 @@ export function SearchBar({ initialValue = "", initialCategory = "books" }: { in
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="books">Books</SelectItem>
             <SelectItem value="music">Music</SelectItem>
           </SelectContent>
         </Select>
@@ -43,7 +42,7 @@ export function SearchBar({ initialValue = "", initialCategory = "books" }: { in
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={category === "books" ? "Search books, authors, series..." : "Search music, artists, albums, tracks..."}
+          placeholder="Search music, artists, albums, tracks..."
           className="pl-9"
         />
       </div>

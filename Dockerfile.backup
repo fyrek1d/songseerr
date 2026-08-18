@@ -24,21 +24,31 @@ RUN apk add --no-cache libc6-compat openssl && \
   addgroup -g 1001 -S nodejs && \
   adduser -S nextjs -u 1001
 
-# Copy necessary files from builder
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Next.js standalone runtime
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma runtime (including CLI)
+# Prisma runtime (client only — no CLI in minimal runtime)
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+RUN mkdir -p node_modules/.bin && ln -s ../prisma/build/index.js node_modules/.bin/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY --from=builder /app/prisma ./prisma
 
-# Create symlink for Prisma CLI
-RUN mkdir -p node_modules/.bin && ln -s ../prisma/build/index.js node_modules/.bin/prisma
-
+USER root
+RUN npm install -g prisma@5.22.0
+USER nextjs
+USER root
+RUN npm install -g prisma@5.22.0
+USER nextjs
+USER root
+RUN npm install -g prisma@5.22.0
+USER nextjs
 # Entrypoint
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh

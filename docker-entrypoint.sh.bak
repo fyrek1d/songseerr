@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+echo "SongSeerr starting on port $PORT..."
+
+if [ -f /app/prisma/seed.js ]; then
+  node /app/prisma/seed.js 2>/dev/null || echo "Seed skipped (may already exist)"
+fi
+
+echo "Launching SongSeerr..."
+exec "$@"

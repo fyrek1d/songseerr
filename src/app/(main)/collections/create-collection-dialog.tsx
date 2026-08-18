@@ -56,7 +56,7 @@ export function CreateCollectionDialog() {
         <DialogHeader>
           <DialogTitle>Create collection</DialogTitle>
           <DialogDescription>
-            Curate books and music into a themed collection.
+            Curate music into a themed collection.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { BookOpen, Music, Home, Library, Search, User, Settings, LogOut } from "lucide-react";
+import { Music, Home, Search, List, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Discover", icon: Home },
   { href: "/search", label: "Search", icon: Search },
-  { href: "/requests", label: "Requests", icon: BookOpen },
-  { href: "/library", label: "Library", icon: Library },
+  { href: "/requests", label: "Requests", icon: Music },
+  { href: "/library", label: "Library", icon: List },
   { href: "/collections", label: "Collections", icon: Music },
 ];
 
@@ -24,8 +24,8 @@ export function Navbar({ session }: { session: any }) {
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto flex h-16 max-w-7xl items-center gap-6 px-4">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <BookOpen className="h-6 w-6" />
-          <span>MediaSeer</span>
+          <Music className="h-6 w-6" />
+          <span>SongSeerr</span>
         </Link>
 
         <nav className="flex items-center gap-1">

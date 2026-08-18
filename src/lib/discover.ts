@@ -1,4 +1,4 @@
-import { searchMusicBrainz, searchOpenLibrary } from "@/lib/search";
+import { searchMusicBrainz } from "@/lib/search";
 import { SearchResult } from "./types";
 
 export interface MusicGenre {
@@ -25,28 +25,7 @@ export const MUSIC_GENRES: MusicGenre[] = [
   { label: "Funk", query: "funk" },
 ];
 
-export interface BookCategory {
-  label: string;
-  query: string;
-}
-
-export const BOOK_CATEGORIES: BookCategory[] = [
-  { label: "Fiction Bestsellers", query: "fiction bestseller" },
-  { label: "New Nonfiction", query: "nonfiction 2024" },
-  { label: "Classic Literature", query: "classic literature" },
-  { label: "Science Fiction", query: "science fiction" },
-  { label: "Fantasy", query: "fantasy" },
-  { label: "Mystery & Thriller", query: "mystery thriller" },
-  { label: "Historical Fiction", query: "historical fiction" },
-  { label: "Biography", query: "biography" },
-  { label: "Romance", query: "romance" },
-  { label: "Horror", query: "horror" },
-  { label: "Young Adult", query: "young adult" },
-  { label: "Poetry", query: "poetry" },
-];
-
 export const MUSIC_GENRES_PER_DAY = 3;
-export const BOOK_CATEGORIES_PER_DAY = 2;
 
 const DAY_MS = 86400000;
 
@@ -96,10 +75,6 @@ export function getTodayMusicGenres(): MusicGenre[] {
   return pickRotated(MUSIC_GENRES, getDayIndex(), MUSIC_GENRES_PER_DAY);
 }
 
-export function getTodayBookCategories(): BookCategory[] {
-  return pickRotated(BOOK_CATEGORIES, getDayIndex(), BOOK_CATEGORIES_PER_DAY);
-}
-
 export async function getPopularMusic(): Promise<SearchResult[]> {
   const genres = getTodayMusicGenres();
   const groups: SearchResult[][] = [];
@@ -109,16 +84,6 @@ export async function getPopularMusic(): Promise<SearchResult[]> {
     const results = await searchMusicBrainz(musicQuery(genre.query), 8, offset);
     if (results.length > 0) groups.push(results);
     if (i < genres.length - 1) await sleep(300);
-  }
-  return interleave(groups).slice(0, 6);
-}
-
-export async function getPopularBooks(): Promise<SearchResult[]> {
-  const categories = getTodayBookCategories();
-  const groups: SearchResult[][] = [];
-  for (const category of categories) {
-    const results = await searchOpenLibrary(category.query);
-    if (results.length > 0) groups.push(results);
   }
   return interleave(groups).slice(0, 6);
 }

@@ -12,15 +12,7 @@ import { RefreshCw, Save } from "lucide-react";
 type Settings = {
   libraryIntegration: {
     jellyfin?: { url: string; apiKey: string };
-    audiobookshelf?: { url: string; apiKey: string };
     navidrome?: { url: string; username?: string; password: string };
-    readarr?: {
-      url: string;
-      apiKey: string;
-      rootFolderId?: number;
-      qualityProfileId?: number;
-      metadataProfileId?: number;
-    };
     lidarr?: {
       url: string;
       apiKey: string;
@@ -113,7 +105,7 @@ export function IntegrationsClient({ initial }: { initial: Settings }) {
         <CardHeader>
           <CardTitle>Jellyfin</CardTitle>
           <CardDescription>
-            Detects music albums and books already in your Jellyfin library.
+            Detects music albums already in your Jellyfin library.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -137,33 +129,7 @@ export function IntegrationsClient({ initial }: { initial: Settings }) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Audiobookshelf</CardTitle>
-          <CardDescription>
-            Detects audiobooks and ebooks already available in Audiobookshelf.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <Label>Server URL</Label>
-            <Input
-              value={integrations.audiobookshelf?.url || ""}
-              onChange={(e) => updateIntegration("audiobookshelf", "url", e.target.value)}
-              placeholder="http://audiobookshelf:13378"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>API token</Label>
-            <Input
-              type="password"
-              value={integrations.audiobookshelf?.apiKey || ""}
-              onChange={(e) => updateIntegration("audiobookshelf", "apiKey", e.target.value)}
-              placeholder="Settings → Users → Token"
-            />
-          </div>
-        </CardContent>
-      </Card>
+
 
       <Card>
         <CardHeader>
@@ -202,67 +168,7 @@ export function IntegrationsClient({ initial }: { initial: Settings }) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Readarr (Books)</CardTitle>
-          <CardDescription>
-            Push book requests directly to Readarr. Queries the library to check
-            for existing items and adds new books on approval.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <Label>Server URL</Label>
-            <Input
-              value={integrations.readarr?.url || ""}
-              onChange={(e) => updateIntegration("readarr", "url", e.target.value)}
-              placeholder="http://readarr:8787"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>API key</Label>
-            <Input
-              type="password"
-              value={integrations.readarr?.apiKey || ""}
-              onChange={(e) => updateIntegration("readarr", "apiKey", e.target.value)}
-              placeholder="Settings → General → API Key"
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label>Root folder ID</Label>
-              <Input
-                type="number"
-                value={integrations.readarr?.rootFolderId || ""}
-                onChange={(e) => updateIntegrationNumber("readarr", "rootFolderId", e.target.value)}
-                placeholder="1"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Quality profile ID</Label>
-              <Input
-                type="number"
-                value={integrations.readarr?.qualityProfileId || ""}
-                onChange={(e) =>
-                  updateIntegrationNumber("readarr", "qualityProfileId", e.target.value)
-                }
-                placeholder="1"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Metadata profile ID</Label>
-              <Input
-                type="number"
-                value={integrations.readarr?.metadataProfileId || ""}
-                onChange={(e) =>
-                  updateIntegrationNumber("readarr", "metadataProfileId", e.target.value)
-                }
-                placeholder="1"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       <Card>
         <CardHeader>

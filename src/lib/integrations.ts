@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
-import { getJellyfinConfig, getAudiobookshelfConfig, getNavidromeConfig } from "./settings";
-import { scanReadarr, scanLidarr } from "./arr";
+import { getJellyfinConfig, getNavidromeConfig } from "./settings";
+import { scanLidarr } from "./arr";
 
 export interface LibraryItemInput {
   title: string;
@@ -40,62 +40,14 @@ export async function scanJellyfin(): Promise<LibraryItemInput[]> {
           : undefined,
       });
     }
-
-    const bookRes = await fetch(
-      `${baseUrl}/Users/${user.Id}/Items?api_key=${config.apiKey}&IncludeItemTypes=Book&Recursive=true&Fields=SeriesName,Author`,
-      { headers }
-    );
-    const bookData = await bookRes.json().catch(() => null);
-    for (const item of bookData?.Items || []) {
-      items.push({
-        title: item.Name || "",
-        artist: item.Author || item.SeriesName,
-        type: "book",
-        externalId: item.Id,
-        source: "jellyfin",
-        coverUrl: item.ImageTags?.Primary
-          ? `${baseUrl}/Items/${item.Id}/Images/Primary?maxHeight=250`
-          : undefined,
-      });
-    }
   }
 
   return items;
 }
 
 export async function scanAudiobookshelf(): Promise<LibraryItemInput[]> {
-  const config = await getAudiobookshelfConfig();
-  if (!config?.url || !config?.apiKey) return [];
-
-  const baseUrl = config.url.replace(/\/$/, "");
-  const headers = { Authorization: `Bearer ${config.apiKey}`, Accept: "application/json" };
-  const items: LibraryItemInput[] = [];
-
-  const libsRes = await fetch(`${baseUrl}/api/libraries`, { headers });
-  const libs = await libsRes.json().catch(() => null);
-
-  for (const lib of libs?.libraries || []) {
-    const itemsRes = await fetch(
-      `${baseUrl}/api/libraries/${lib.id}/items?limit=200`,
-      { headers }
-    );
-    const data = await itemsRes.json().catch(() => null);
-    for (const item of data?.results || []) {
-      const media = item.media;
-      items.push({
-        title: media?.metadata?.title || item.metadata?.title || "",
-        artist: media?.metadata?.authors?.[0]?.name || item.metadata?.authors?.[0]?.name,
-        type: media?.type === "book" ? (item.isPodcast ? "music" : "book") : "book",
-        externalId: item.id,
-        source: "audiobookshelf",
-        coverUrl: media?.metadata?.coverPath
-          ? `${baseUrl}/api/items/${item.id}/cover`
-          : undefined,
-      });
-    }
-  }
-
-  return items;
+  // Audiobookshelf functionality removed - music only
+  return [];
 }
 
 export async function scanNavidrome(): Promise<LibraryItemInput[]> {
@@ -107,7 +59,7 @@ export async function scanNavidrome(): Promise<LibraryItemInput[]> {
 
   const auth = await fetch(
     `${baseUrl}/rest/auth`,
-    { headers: { "x-subsonic-api-version": "1.16.1", "x-subsonic-client": "MediaSeer" } }
+    { headers: { "x-subsonic-api-version": "1.16.1", "x-subsonic-client": "SongSeerr" } }
   ).catch(() => null);
   if (!auth) return [];
 
@@ -146,9 +98,7 @@ export async function runLibraryScan(): Promise<{ added: number; source: string 
 
   for (const [name, fn] of [
     ["jellyfin", scanJellyfin],
-    ["audiobookshelf", scanAudiobookshelf],
     ["navidrome", scanNavidrome],
-    ["readarr", scanReadarr],
     ["lidarr", scanLidarr],
   ] as const) {
     try {

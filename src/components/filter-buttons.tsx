@@ -6,7 +6,7 @@ interface FilterButtonsProps {
   fields: readonly { value: string; label: string }[];
   activeField: string;
   query: string;
-  category: "books" | "music";
+  category: "music";
 }
 
 export function FilterButtons({ fields, activeField, query, category }: FilterButtonsProps) {

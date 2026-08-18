@@ -1,32 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unifiedSearch, searchOpenLibrary, searchMusicBrainz, searchMusicBrainzArtists, searchMusicBrainzTracks, searchBooks, sleep } from "@/lib/search";
+import { unifiedSearch, searchMusicBrainz, searchMusicBrainzArtists, searchMusicBrainzTracks, sleep } from "@/lib/search";
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q");
-  const category = request.nextUrl.searchParams.get("category") as "books" | "music" | null;
+  const category = request.nextUrl.searchParams.get("category") as "music" | null;
   const field = request.nextUrl.searchParams.get("field");
 
   if (!query || query.length < 2) {
-    return NextResponse.json({ books: [], music: [], artists: [], tracks: [] });
+    return NextResponse.json({ music: [], artists: [], tracks: [] });
   }
 
   try {
-    if (category === "books") {
-      let books: any[] = [];
-      if (field === "author") {
-        books = await searchOpenLibrary(`author:"${query}"`);
-        if (books.length === 0) books = await searchBooks(query);
-      } else if (field === "title") {
-        books = await searchOpenLibrary(`title:"${query}"`);
-        if (books.length === 0) books = await searchBooks(query);
-      } else if (field === "series") {
-        books = await searchBooks(query);
-      } else {
-        books = await searchBooks(query);
-      }
-      return NextResponse.json({ books, music: [], artists: [], tracks: [] });
-    }
-
     if (category === "music") {
       let music: any[] = [];
       let artists: any[] = [];
@@ -45,7 +29,7 @@ export async function GET(request: NextRequest) {
         await sleep(400);
         tracks = await searchMusicBrainzTracks(query);
       }
-      return NextResponse.json({ books: [], music, artists, tracks });
+      return NextResponse.json({ music, artists, tracks });
     }
 
     const results = await unifiedSearch(query);

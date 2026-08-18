@@ -1,12 +1,10 @@
 import { SearchResult } from "./types";
 
-const OPEN_LIBRARY_URL = "https://openlibrary.org";
 const MUSICBRAINZ_URL = "https://musicbrainz.org/ws/2";
 const COVERART_URL = "https://coverartarchive.org";
-const GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1";
 const ITUNES_URL = "https://itunes.apple.com";
 
-const UA = "MediaSeer/1.0 (https://mediaseer.local)";
+const UA = "SongSeerr/1.0 (https://songseerr.local)";
 
 // iTunes lookups are cached so repeat searches don't hammer the API
 const coverCache = new Map<string, string | undefined>();
@@ -63,12 +61,12 @@ function artistOf(item: any): string {
 
 // Resolve a cover via iTunes (fast, reliable, NOT archive.org-dependent).
 // Falls back to nothing so the card shows the placeholder icon.
-async function resolveItunesCover(title: string, artist: string, entity: "album" | "ebook"): Promise<string | undefined> {
-  const key = `${entity}:${title.toLowerCase()}|${artist.toLowerCase()}`;
+async function resolveItunesCover(title: string, artist: string): Promise<string | undefined> {
+  const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
   if (coverCache.has(key)) return coverCache.get(key);
   try {
     const data = await fetchJson(
-      `${ITUNES_URL}/search?term=${encodeURIComponent(`${artist} ${title}`)}&entity=${entity}&limit=1`
+      `${ITUNES_URL}/search?term=${encodeURIComponent(`${artist} ${title}`)}&entity=album&limit=1`
     );
     const url = data?.results?.[0]?.artworkUrl100;
     const resolved = url ? url.replace("100x100bb", "600x600bb") : undefined;
@@ -78,81 +76,6 @@ async function resolveItunesCover(title: string, artist: string, entity: "album"
     coverCache.set(key, undefined);
     return undefined;
   }
-}
-
-export async function searchOpenLibrary(query: string): Promise<SearchResult[]> {
-  try {
-    const data = await fetchJson(
-      `${OPEN_LIBRARY_URL}/search.json?q=${encodeURIComponent(query)}&limit=12&fields=key,title,author_name,first_publish_year,cover_i,already_read_count,want_to_read_count&sort=already_read_count%20desc`
-    );
-    return (data.docs || []).map((doc: any) => ({
-      id: doc.key.replace("/works/", ""),
-      type: "book" as const,
-      title: doc.title,
-      subtitle: Array.isArray(doc.author_name) ? doc.author_name.join(", ") : "Unknown author",
-      coverUrl: doc.cover_i
-        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
-        : undefined,
-      externalUrl: `${OPEN_LIBRARY_URL}${doc.key}`,
-      year: doc.first_publish_year,
-      popularity: doc.already_read_count || doc.want_to_read_count || 0,
-      details: { source: "openlibrary" },
-    }));
-  } catch {
-    return [];
-  }
-}
-
-export async function searchGoogleBooks(query: string): Promise<SearchResult[]> {
-  try {
-    const data = await fetchJson(
-      `${GOOGLE_BOOKS_URL}/volumes?q=${encodeURIComponent(query)}&maxResults=12&country=US`
-    );
-    return (data.items || []).map((item: any) => {
-      const info = item.volumeInfo || {};
-      const img = info.imageLinks;
-      return {
-        id: item.id,
-        type: "book" as const,
-        title: info.title,
-        subtitle: info.authors?.join(", ") || "Unknown author",
-        coverUrl: img?.thumbnail || img?.smallThumbnail,
-        externalUrl: info.canonicalVolumeLink || item.selfLink,
-        year: info.publishedDate ? parseInt(info.publishedDate, 10) : undefined,
-        popularity: 0,
-        details: { source: "googlebooks" },
-      };
-    });
-  } catch {
-    return [];
-  }
-}
-
-export async function searchiTunesBooks(query: string): Promise<SearchResult[]> {
-  try {
-    const data = await fetchJson(`${ITUNES_URL}/search?term=${encodeURIComponent(query)}&entity=ebook&limit=12`);
-    return (data.results || []).map((r: any) => ({
-      id: String(r.trackId || r.collectionId || r.title),
-      type: "book" as const,
-      title: r.trackName || r.collectionName,
-      subtitle: r.artistName || "Unknown author",
-      coverUrl: r.artworkUrl100 ? r.artworkUrl100.replace("100x100bb", "600x600bb") : undefined,
-      externalUrl: r.trackViewUrl || r.collectionViewUrl || undefined,
-      year: r.releaseDate ? parseInt(r.releaseDate.slice(0, 4), 10) : undefined,
-      popularity: 0,
-      details: { source: "itunes" },
-    }));
-  } catch {
-    return [];
-  }
-}
-
-export async function searchBooks(query: string): Promise<SearchResult[]> {
-  const open = await searchOpenLibrary(query);
-  if (open.length > 0) return open;
-  const google = await searchGoogleBooks(query);
-  if (google.length > 0) return google;
-  return searchiTunesBooks(query);
 }
 
 export async function searchMusicBrainz(query: string, limit = 12, offset = 0): Promise<SearchResult[]> {
@@ -189,7 +112,7 @@ export async function searchMusicBrainz(query: string, limit = 12, offset = 0): 
   // Fill missing covers from iTunes (parallel, cached)
   await Promise.all(
     results.map(async (r: any) => {
-      if (!r.coverUrl) r.coverUrl = await resolveItunesCover(r.title, r.subtitle, "album");
+      if (!r.coverUrl) r.coverUrl = await resolveItunesCover(r.title, r.subtitle);
     })
   );
 
@@ -239,30 +162,14 @@ export async function searchMusicBrainzTracks(query: string): Promise<SearchResu
     });
 }
 
+// Unified search now only searches music
 export async function unifiedSearch(query: string) {
-  const [books, music, artists, tracks] = await Promise.all([
-    searchBooks(query),
+  const [music, artists, tracks] = await Promise.all([
     searchMusicBrainz(query),
     searchMusicBrainzArtists(query),
     searchMusicBrainzTracks(query),
   ]);
-  return { books, music, artists, tracks };
-}
-
-export async function searchBooksWithFallback(query: string): Promise<SearchResult[]> {
-  return searchBooks(query);
-}
-
-export async function getBookDetails(workId: string): Promise<Record<string, any>> {
-  try {
-    return await fetchJson(`${OPEN_LIBRARY_URL}/works/${workId}.json`);
-  } catch {
-    return {};
-  }
-}
-
-export async function getBookCover(coverId?: number): Promise<string | undefined> {
-  return coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : undefined;
+  return { music, artists, tracks };
 }
 
 export async function getReleaseDetails(releaseId: string): Promise<Record<string, any>> {

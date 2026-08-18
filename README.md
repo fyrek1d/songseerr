@@ -1,15 +1,15 @@
-# MediaSeer
+# SongSeerr
 
-Unified books & music request management for self-hosted homeservers.
+Unified music request management for self-hosted homeservers.
 
-A single-container web app similar to Jellyseerr, but for **books and music**. Runs on Next.js 14 with SQLite, providing discovery, search, request management, and library integration for both media types.
+A single-container web app similar to Jellyseerr, but for **music**. Runs on Next.js 14 with SQLite, providing discovery, search, request management, and library integration for music.
 
 ## Features
 
-- **Unified search**: OpenLibrary + Google Books (fallback) for books; MusicBrainz for music
+- **Unified search**: MusicBrainz for music
 - **Request queue**: pending → approved → available or declined, with auto-approval for trusted users
-- **Library integration**: Jellyfin, Audiobookshelf, Navidrome — detect and mark existing items
-- **Collections**: Create curated public or private collections of books and music
+- **Library integration**: Jellyfin, Navidrome — detect and mark existing items
+- **Collections**: Create curated public or private collections of music
 - **Issue reporting**: Report broken/misattributed library items to admin triage
 - **Admin panel**: User roles, request rules, webhook notifications, metadata provider config
 - **Auth**: Built-in credentials (NextAuth JWT), roles: Admin / Trusted / Standard
@@ -52,10 +52,9 @@ Environment variables:
 
 ## Library Integration
 
-MediaSeer can detect already-owned content on these platforms:
+SongSeerr can detect already-owned content on these platforms:
 
-- **Jellyfin** — detects albums, audiobooks, and ebooks
-- **Audiobookshelf** — detects audiobooks and books
+- **Jellyfin** — detects albums
 - **Navidrome** — detects music via Subsonic API (optional)
 
 Configure them in the Admin → Integrations panel.

@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
   const { event, externalId, type, title } = body;
 
   if (event === "library.scanned" && externalId) {
-    await prisma.libraryItem.create({
-      data: { title: title || externalId, externalId, type: type || "book", source: "external" },
-    });
+await prisma.libraryItem.create({
+       data: { title: title || externalId, externalId, type: type || "music", source: "external" },
+     });
   }
 
   await notifyWebhook(event, body);
