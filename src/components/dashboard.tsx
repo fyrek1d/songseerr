@@ -11,12 +11,10 @@ import {
   Clock,
   User,
   ArrowUpRight,
-  Download,
   CheckCheck,
   XCircle,
   Loader2,
   LayoutDashboard,
-  TrendingUp,
   Shield,
   ExternalLink,
 } from "lucide-react";
@@ -115,15 +113,15 @@ function StatCard({
   trend?: string;
 }) {
   return (
-    <div className="group relative bg-card rounded-xl border p-5 transition-all hover:shadow-lg hover:border-primary/20">
+    <div className="group relative bg-card rounded-xl border p-5 sm:p-6 transition-all duration-200 hover:shadow-lg hover:border-primary/30 card-hover">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{title}</p>
-          <p className="text-3xl font-bold text-foreground">{value}</p>
+          <p className="text-3xl sm:text-4xl font-bold text-foreground">{value}</p>
           {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
           {trend && (
-            <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
+            <p className="text-xs text-primary mt-1 flex items-center gap-1">
+              <span className="h-3 w-3">↗</span>
               {trend}
             </p>
           )}
@@ -139,8 +137,8 @@ function StatCard({
 
 function StatusBadge({ status }: { status: string }) {
   const configs = {
-    pending: { bg: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400", icon: Loader2, label: "Pending" },
-    approved: { bg: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", icon: CheckCircle2, label: "Approved" },
+    pending: { bg: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", icon: Loader2, label: "Pending" },
+    approved: { bg: "bg-primary/10 text-primary dark:bg-primary/20", icon: CheckCircle2, label: "Approved" },
     available: { bg: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", icon: CheckCheck, label: "Available" },
     declined: { bg: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", icon: XCircle, label: "Declined" },
   };
@@ -163,8 +161,8 @@ export default async function Dashboard() {
       title: "Active Requests",
       value: stats.active,
       icon: Activity,
-      color: "blue-500",
-      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      color: "primary",
+      bgColor: "bg-primary/10",
       description: "Pending + Approved",
     },
     {
@@ -179,8 +177,8 @@ export default async function Dashboard() {
       title: "Library Items",
       value: stats.downloads,
       icon: Database,
-      color: "purple-500",
-      bgColor: "bg-purple-100 dark:bg-purple-900/30",
+      color: "primary",
+      bgColor: "bg-primary/10",
       description: "Tracks in Navidrome",
     },
     {
@@ -203,21 +201,21 @@ export default async function Dashboard() {
       title: "System",
       value: stats.system,
       icon: Server,
-      color: "gray-500",
-      bgColor: "bg-gray-100 dark:bg-gray-800",
+      color: "primary",
+      bgColor: "bg-primary/10",
       description: "Music Request System",
     },
   ];
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-xl text-primary">
             <LayoutDashboard className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Dashboard</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">Dashboard</h2>
             <p className="text-sm text-muted-foreground">Overview of your music request system</p>
           </div>
         </div>
@@ -237,10 +235,10 @@ export default async function Dashboard() {
       </div>
 
       <div className="bg-card rounded-xl border overflow-hidden">
-        <div className="p-5 border-b flex items-center justify-between">
+        <div className="p-5 sm:p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-muted rounded-xl">
-              <Music className="h-5 w-5 text-muted-foreground" />
+            <div className="p-2 bg-primary/10 rounded-xl text-primary">
+              <Music className="h-5 w-5" />
             </div>
             <div>
               <h3 className="text-lg font-semibold">Recent Requests</h3>
@@ -275,7 +273,7 @@ export default async function Dashboard() {
                   {request.subtitle && (
                     <p className="text-sm text-muted-foreground truncate">{request.subtitle}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex flex-wrap items-center gap-3 mt-2">
                     <StatusBadge status={request.status} />
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <User className="h-3 w-3" />

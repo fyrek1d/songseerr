@@ -21,14 +21,14 @@ export function Navbar({ session }: { session: any }) {
   const isAdmin = session?.user?.role === "admin";
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-      <div className="container mx-auto flex h-16 max-w-7xl items-center gap-6 px-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+    <header className="sticky top-0 z-50 bg-primary border-b border-primary/20 shadow-lg">
+      <div className="container-main flex h-16 items-center gap-6">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary-foreground">
           <Music className="h-6 w-6" />
           <span>SongSeerr</span>
         </Link>
 
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1 ml-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -37,10 +37,10 @@ export function Navbar({ session }: { session: any }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-primary-foreground/10 text-primary-foreground"
+                    : "text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -49,24 +49,24 @@ export function Navbar({ session }: { session: any }) {
             );
           })}
            {isAdmin && (
-             <Link
-               href="/admin"
-               className={cn(
-                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                 pathname && pathname.startsWith("/admin")
-                   ? "bg-primary text-primary-foreground"
-                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
-               )}
-             >
-               <Settings className="h-4 w-4" />
-               <span className="hidden sm:inline">Admin</span>
-             </Link>
-           )}
+            <Link
+              href="/admin"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200",
+                pathname && pathname.startsWith("/admin")
+                  ? "bg-primary-foreground/10 text-primary-foreground"
+                  : "text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              )}
+            >
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Admin</span>
+            </Link>
+          )}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
           <Link href="/profile">
-            <Button variant="ghost" size="sm" className="gap-2">
+            <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">{session?.user?.name}</span>
             </Button>
@@ -75,6 +75,7 @@ export function Navbar({ session }: { session: any }) {
             variant="ghost"
             size="sm"
             onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-primary-foreground hover:bg-primary-foreground/10"
           >
             <LogOut className="h-4 w-4" />
           </Button>
