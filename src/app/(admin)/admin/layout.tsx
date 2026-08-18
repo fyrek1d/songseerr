@@ -23,8 +23,14 @@ export default async function AdminLayout({
   if ((session?.user as any)?.role !== "admin") redirect("/");
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-52 shrink-0 border-r bg-card/50 p-4">
+    <div className="flex min-h-screen bg-background">
+      <aside className="w-52 shrink-0 border-r border-border bg-card p-4">
+        <div className="mb-6">
+          <Link href="/admin" className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <span className="text-primary">Songseerr</span>
+            <span className="text-xs text-muted-uppercase tracking-wider">Admin</span>
+          </Link>
+        </div>
         <nav className="space-y-1">
           {adminLinks.map((link) => (
             <Link
@@ -32,7 +38,7 @@ export default async function AdminLayout({
               href={link.href}
               className={cn(
                 "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                "hover:bg-muted hover:text-foreground"
+                "hover:bg-primary/10 hover:text-primary text-muted-foreground"
               )}
             >
               {link.label}
@@ -40,7 +46,7 @@ export default async function AdminLayout({
           ))}
         </nav>
       </aside>
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 sm:p-8 lg:p-10">
         <BackButton />
         <div className="mt-4">{children}</div>
       </main>

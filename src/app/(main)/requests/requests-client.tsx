@@ -23,10 +23,10 @@ type Request = {
 };
 
 const statusStyles: Record<string, string> = {
-  pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  approved: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  available: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  declined: "bg-destructive/10 text-destructive",
+  pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  approved: "bg-primary/10 text-primary border-primary/30",
+  available: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  declined: "bg-red-500/15 text-red-400 border-red-500/30",
 };
 
 export function RequestsClient({
@@ -68,17 +68,17 @@ export function RequestsClient({
 
   function RequestRow({ r }: { r: Request }) {
     return (
-      <div className="flex items-center gap-4 rounded-lg border bg-card p-3">
+      <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 hover:bg-muted/50 transition-colors">
         <div className="w-12 shrink-0">
-<CoverImage
-             coverUrl={r.coverUrl}
-             title={r.title}
-             type={r.type as "music" | "artist" | "track"}
-             className="aspect-[2/3] rounded-sm"
-           />
+          <CoverImage
+            coverUrl={r.coverUrl}
+            title={r.title}
+            type={r.type as "music" | "artist" | "track"}
+            className="aspect-[2/3] rounded-sm"
+          />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{r.title}</p>
+          <p className="truncate font-medium text-foreground">{r.title}</p>
           <p className="truncate text-sm text-muted-foreground">
             {r.subtitle} · {r.type} · {format(new Date(r.createdAt), "MMM d, yyyy")}
           </p>
@@ -93,6 +93,7 @@ export function RequestsClient({
                   size="sm"
                   variant="outline"
                   onClick={() => updateStatus(r.id, "approved")}
+                  className="border-border hover:bg-primary/10 hover:border-primary/50"
                 >
                   <Check className="h-4 w-4" /> Approve
                 </Button>
@@ -100,17 +101,28 @@ export function RequestsClient({
                   size="sm"
                   variant="outline"
                   onClick={() => updateStatus(r.id, "declined")}
+                  className="border-border hover:bg-red-500/10 hover:border-red-500/50"
                 >
                   <X className="h-4 w-4" /> Decline
                 </Button>
               </>
             )}
             {r.status === "approved" && (
-              <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "available")}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => updateStatus(r.id, "available")}
+                className="border-border hover:bg-emerald-500/10 hover:border-emerald-500/50"
+              >
                 <PackageCheck className="h-4 w-4" /> Mark available
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => deleteRequest(r.id)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => deleteRequest(r.id)}
+              className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -124,17 +136,26 @@ export function RequestsClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Requests</h1>
-        <div className="flex gap-2">
-          <Badge variant="outline">{counts.pending} pending</Badge>
-          <Badge variant="outline">{counts.approved} approved</Badge>
-          <Badge variant="outline">{counts.available} available</Badge>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold text-foreground">Requests</h1>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+            {counts.pending} pending
+          </Badge>
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+            {counts.approved} approved
+          </Badge>
+          <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+            {counts.available} available
+          </Badge>
+          <Badge variant="outline" className="bg-red-500/15 text-red-400 border-red-500/30">
+            {counts.declined} declined
+          </Badge>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList className="bg-muted border-border">
           <TabsTrigger value="queue">
             Queue {canModerate && `(${queue.length})`}
           </TabsTrigger>

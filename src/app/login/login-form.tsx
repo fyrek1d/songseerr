@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen } from "lucide-react";
+import { Music } from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -40,20 +40,22 @@ export default function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md border-border bg-card">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <BookOpen className="h-6 w-6" />
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Music className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl">Welcome to SongSeerr</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-foreground">Welcome to Songseerr</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Unified music requests for your media stack
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -61,10 +63,13 @@ export default function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
+                className="bg-input border-border"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -72,6 +77,7 @@ export default function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                className="bg-input border-border"
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -81,7 +87,7 @@ export default function LoginForm() {
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <a href="/register" className="text-primary hover:underline">
+            <a href="/register" className="text-primary hover:underline font-medium">
               Register
             </a>
           </p>
