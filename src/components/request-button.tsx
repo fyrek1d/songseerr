@@ -20,9 +20,10 @@ interface RequestButtonProps {
   };
   disabled?: boolean;
   className?: string;
+  demoMode?: boolean;
 }
 
-export function RequestButton({ item, disabled, className }: RequestButtonProps) {
+export function RequestButton({ item, disabled, className, demoMode = false }: RequestButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { data: session } = useSession();
@@ -46,6 +47,12 @@ export function RequestButton({ item, disabled, className }: RequestButtonProps)
 
   const role = (session?.user as any)?.role;
   const willAutoApprove = autoApproveTrusted && (role === "trusted" || role === "admin");
+
+  if (demoMode) {
+    return (
+      <span className="text-sm text-muted-foreground">Read-only demo</span>
+    );
+  }
 
   async function submit() {
     setLoading(true);

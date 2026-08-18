@@ -1,30 +1,29 @@
 import { SearchBar } from "@/components/search-bar";
-import Dashboard from "@/components/dashboard";
+import { MediaCard } from "@/components/media-card";
+import { getPopularMusic, MUSIC_GENRES } from "@/lib/discover";
 import Link from "next/link";
 import { ArrowRight, Music as MusicIcon } from "lucide-react";
 
-const DISCOVER_QUERIES = [
-  { label: "Rock Classics", query: "rock classic album" },
-  { label: "Electronic Beats", query: "electronic music" },
-  { label: "Jazz Essentials", query: "jazz" },
-  { label: "Hip Hop Hits", query: "hip hop" },
-  { label: "Pop Anthems", query: "pop" },
-  { label: "Classical Masterpieces", query: "classical" },
-];
+// Re-render periodically so the daily-rotated discovery picks stay fresh
+// without a full rebuild.
+export const revalidate = 21600;
 
-export default async function DashboardPage() {
+export default async function DemoHomePage() {
+  const popular = await getPopularMusic();
+
   return (
     <div className="container-main space-y-10">
       <section className="page-section pt-12 pb-8 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6 border border-primary/20">
           <MusicIcon className="h-4 w-4" />
-          <span className="text-sm font-medium">Discover & Request Music</span>
+          <span className="text-sm font-medium">Songseerr — Public Demo</span>
         </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
           Discover Great Music
         </h1>
         <p className="mt-6 mx-auto max-w-2xl text-lg sm:text-xl text-muted-foreground">
-          Search for your favorite albums, artists, or tracks and add them to your collection.
+          Search for your favorite albums, artists, or tracks from around the world.
+          This is a read-only demo — nothing is connected to your library.
         </p>
         <div className="mt-10 mx-auto max-w-2xl">
           <SearchBar />
@@ -32,7 +31,27 @@ export default async function DashboardPage() {
       </section>
 
       <section className="page-section pt-0">
-        <Dashboard />
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Popular Music</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Curated picks, rotating daily</p>
+          </div>
+          <Link
+            href="/search?q=popular"
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          >
+            See all <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        {popular.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {popular.map((item) => (
+              <MediaCard key={item.id} {...item} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Popular music is loading — try a search above.</p>
+        )}
       </section>
 
       <section className="page-section pt-0">
@@ -43,7 +62,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {DISCOVER_QUERIES.map(({ label, query }) => (
+          {MUSIC_GENRES.map(({ label, query }) => (
             <Link
               key={label}
               href={`/search?q=${encodeURIComponent(query)}`}

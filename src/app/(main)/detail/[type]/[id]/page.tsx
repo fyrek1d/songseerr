@@ -29,6 +29,7 @@ export default async function DetailPage({
 }) {
   const { type, id } = params;
   if (!["music", "artist", "track"].includes(type)) redirect("/");
+  const demoMode = process.env.DEMO_MODE === "true";
 
   if (type === "music") {
     const details = await getReleaseDetails(id);
@@ -84,7 +85,8 @@ export default async function DetailPage({
                   externalId: id,
                   externalUrl: `https://musicbrainz.org/release/${id}`,
                 }}
-                disabled={alreadyOwned || !!alreadyRequested}
+disabled={alreadyOwned || !!alreadyRequested}
+                demoMode={demoMode}
               />
               {alreadyOwned && <Badge variant="success">Already in library</Badge>}
               {!alreadyOwned && alreadyRequested && <Badge variant="outline">Requested</Badge>}
@@ -201,7 +203,8 @@ export default async function DetailPage({
                   externalId: id,
                   externalUrl: `https://musicbrainz.org/artist/${id}`,
                 }}
-                disabled={!!alreadyRequested || inLidarr}
+disabled={!!alreadyRequested || inLidarr}
+                demoMode={demoMode}
               />
               {inLidarr && <Badge variant="success">Already in library</Badge>}
               {!inLidarr && alreadyRequested && <Badge variant="outline">Requested</Badge>}
@@ -332,7 +335,8 @@ export default async function DetailPage({
                   ? `https://musicbrainz.org/release/${release.id}`
                   : `https://musicbrainz.org/recording/${id}`,
               }}
-              disabled={!!alreadyRequested || inLidarr}
+disabled={!!alreadyRequested || inLidarr}
+              demoMode={demoMode}
             />
             {inLidarr && <Badge variant="success">Already in library</Badge>}
             {!inLidarr && alreadyRequested && <Badge variant="outline">Requested</Badge>}

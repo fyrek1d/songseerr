@@ -13,6 +13,13 @@ export const GET = withAuth(async (req: NextRequest) => {
 });
 
 export const POST = withAuth(async (req: NextRequest) => {
+  if (process.env.DEMO_MODE === "true") {
+    return NextResponse.json(
+      { error: "Demo mode is read-only — requests are disabled." },
+      { status: 403 }
+    );
+  }
+
   const session = await (await import("next-auth")).getServerSession(
     (await import("@/lib/auth")).authOptions
   );

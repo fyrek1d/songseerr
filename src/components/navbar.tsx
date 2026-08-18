@@ -15,7 +15,7 @@ const navItems = [
   { href: "/collections", label: "Collections", icon: Music },
 ];
 
-export function Navbar({ session }: { session: any }) {
+export function Navbar({ session, demoMode = false }: { session: any; demoMode?: boolean }) {
   const pathname = usePathname();
   const isAdmin = session?.user?.role === "admin";
 
@@ -64,20 +64,26 @@ export function Navbar({ session }: { session: any }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link href="/profile">
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground hover:bg-muted">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{session?.user?.name}</span>
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {demoMode ? (
+            <span className="text-sm text-muted-foreground">Public demo — no login required</span>
+          ) : (
+            <>
+              <Link href="/profile">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground hover:bg-muted">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">{session?.user?.name}</span>
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
