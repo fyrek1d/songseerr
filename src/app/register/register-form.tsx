@@ -40,10 +40,10 @@ export default function RegisterForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md border-border bg-card p-6 sm:p-8">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Join your media stack</CardDescription>
+          <CardTitle className="text-2xl font-bold text-foreground">Create Account</CardTitle>
+          <CardDescription className="text-muted-foreground">Join your media stack</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -24,20 +24,20 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="w-52 shrink-0 border-r border-border bg-card p-4">
-        <div className="mb-6">
+      <aside className="w-56 shrink-0 border-r border-border bg-card p-5">
+        <div className="mb-8">
           <Link href="/admin" className="flex items-center gap-2 text-lg font-bold text-foreground">
             <span className="text-primary">Songseerr</span>
             <span className="text-xs text-muted-uppercase tracking-wider">Admin</span>
           </Link>
         </div>
-        <nav className="space-y-1">
+        <nav className="space-y-1.5">
           {adminLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "block rounded-md px-3.5 py-2.5 text-sm font-medium transition-colors",
                 "hover:bg-primary/10 hover:text-primary text-muted-foreground"
               )}
             >
@@ -46,9 +46,9 @@ export default async function AdminLayout({
           ))}
         </nav>
       </aside>
-      <main className="flex-1 p-6 sm:p-8 lg:p-10">
+      <main className="flex-1 p-8 sm:p-10 lg:p-12">
         <BackButton />
-        <div className="mt-4">{children}</div>
+        <div className="mt-6">{children}</div>
       </main>
     </div>
   );
