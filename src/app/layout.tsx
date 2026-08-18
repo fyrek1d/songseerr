@@ -6,10 +6,9 @@ export const metadata: Metadata = {
   title: "Songseerr",
   description: "Unified music request management for self-hosted homeservers",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon-v2.ico",
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
-    other: [{ rel: "icon", url: "/favicon.ico" }],
   },
 };
 

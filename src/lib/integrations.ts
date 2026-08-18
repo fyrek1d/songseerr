@@ -107,16 +107,26 @@ export async function runLibraryScan(): Promise<{ added: number; source: string 
       for (const item of items) {
         if (!item.title) continue;
         const existing = await prisma.libraryItem.findFirst({
-          where: {
-            title: item.title,
-            artist: item.artist || undefined,
-            type: item.type,
-            source: item.source,
-          },
+          where: item.externalId
+            ? {
+                externalId: item.externalId,
+                type: item.type,
+                source: item.source,
+              }
+            : {
+                title: item.title,
+                artist: item.artist || undefined,
+                type: item.type,
+                source: item.source,
+              },
         });
         if (!existing) {
-          await prisma.libraryItem.create({ data: item });
-          added++;
+          try {
+            await prisma.libraryItem.create({ data: item });
+            added++;
+          } catch (error: any) {
+            if (error?.code !== "P2002") throw error;
+          }
         }
       }
       results.push({ source: name, added });
