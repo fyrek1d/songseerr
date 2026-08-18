@@ -1,8 +1,57 @@
 import { prisma } from "@/lib/prisma";
 import { getLidarrConfig, getNavidromeConfig } from "@/lib/settings";
 import Link from "next/link";
+import {
+  Music,
+  CheckCircle2,
+  AlertCircle,
+  Database,
+  Server,
+  Activity,
+  Clock,
+  User,
+  ArrowUpRight,
+  Download,
+  CheckCheck,
+  XCircle,
+  Loader2,
+  LayoutDashboard,
+  TrendingUp,
+  Shield,
+  ExternalLink,
+} from "lucide-react";
 
-export async function getDashboardStats() {
+interface DashboardStats {
+  active: number;
+  completed: number;
+  downloads: number;
+  attention: number;
+  healthy: boolean;
+  system: string;
+}
+
+interface RecentRequest {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string | null;
+  coverUrl: string | null;
+  externalId: string;
+  externalUrl: string | null;
+  status: string;
+  userId: string;
+  note: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  approvedAt: Date | null;
+  declinedAt: Date | null;
+  fulfilledAt: Date | null;
+  user: {
+    username: string;
+  };
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
   const [pendingCount, approvedCount, availableCount, declinedCount] = await Promise.all([
     prisma.request.count({ where: { status: "pending" } }),
     prisma.request.count({ where: { status: "approved" } }),
@@ -22,7 +71,7 @@ export async function getDashboardStats() {
   const healthy = !!(lidarrConfig?.url && lidarrConfig?.apiKey && 
                     navidromeConfig?.url && navidromeConfig?.password);
   
-  const system = "Music Request System";
+  const system = "Songseerr";
 
   return {
     active,
@@ -34,7 +83,7 @@ export async function getDashboardStats() {
   };
 }
 
-export async function getRecentRequests(limit = 5) {
+export async function getRecentRequests(limit = 5): Promise<RecentRequest[]> {
   return await prisma.request.findMany({
     take: limit,
     orderBy: { createdAt: "desc" },
@@ -48,73 +97,211 @@ export async function getRecentRequests(limit = 5) {
   });
 }
 
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+  bgColor,
+  description,
+  trend,
+}: {
+  title: string;
+  value: number | string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bgColor: string;
+  description?: string;
+  trend?: string;
+}) {
+  return (
+    <div className="group relative bg-card rounded-xl border p-5 transition-all hover:shadow-lg hover:border-primary/20">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{title}</p>
+          <p className="text-3xl font-bold text-foreground">{value}</p>
+          {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+          {trend && (
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" />
+              {trend}
+            </p>
+          )}
+        </div>
+        <div className={`p-3 rounded-xl ${bgColor} text-${color}`}>
+          <Icon className="h-6 w-6" />
+        </div>
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const configs = {
+    pending: { bg: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400", icon: Loader2, label: "Pending" },
+    approved: { bg: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", icon: CheckCircle2, label: "Approved" },
+    available: { bg: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", icon: CheckCheck, label: "Available" },
+    declined: { bg: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", icon: XCircle, label: "Declined" },
+  };
+  const config = configs[status as keyof typeof configs] || configs.pending;
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg}`}>
+      <Icon className="h-3 w-3" />
+      {config.label}
+    </span>
+  );
+}
+
 export default async function Dashboard() {
   const stats = await getDashboardStats();
   const recentRequests = await getRecentRequests();
-  
+
+  const statCards = [
+    {
+      title: "Active Requests",
+      value: stats.active,
+      icon: Activity,
+      color: "blue-500",
+      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      description: "Pending + Approved",
+    },
+    {
+      title: "Completed",
+      value: stats.completed,
+      icon: CheckCheck,
+      color: "green-500",
+      bgColor: "bg-green-100 dark:bg-green-900/30",
+      description: "Fulfilled requests",
+    },
+    {
+      title: "Library Items",
+      value: stats.downloads,
+      icon: Database,
+      color: "purple-500",
+      bgColor: "bg-purple-100 dark:bg-purple-900/30",
+      description: "Tracks in Navidrome",
+    },
+    {
+      title: "Needs Attention",
+      value: stats.attention,
+      icon: AlertCircle,
+      color: "red-500",
+      bgColor: "bg-red-100 dark:bg-red-900/30",
+      description: "Declined requests",
+    },
+    {
+      title: "System Health",
+      value: stats.healthy ? "Healthy" : "Degraded",
+      icon: Shield,
+      color: stats.healthy ? "green-500" : "red-500",
+      bgColor: stats.healthy ? "bg-green-100 dark:bg-green-900/30" : "bg-red-100 dark:bg-red-900/30",
+      description: stats.healthy ? "Lidarr + Navidrome connected" : "Check integrations",
+    },
+    {
+      title: "System",
+      value: stats.system,
+      icon: Server,
+      color: "gray-500",
+      bgColor: "bg-gray-100 dark:bg-gray-800",
+      description: "Music Request System",
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-card p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Active</h3>
-          <p className="text-2xl font-bold">{stats.active}</p>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-xl text-primary">
+            <LayoutDashboard className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Overview of your music request system</p>
+          </div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Completed</h3>
-          <p className="text-2xl font-bold">{stats.completed}</p>
-        </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Downloads</h3>
-          <p className="text-2xl font-bold">{stats.downloads}</p>
-        </div>
+        <Link 
+          href="/requests" 
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View All Requests
+        </Link>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-card p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Attention</h3>
-          <p className="text-2xl font-bold">{stats.attention}</p>
-        </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Healthy</h3>
-          <p className="text-2xl font-bold">
-            <span className={stats.healthy ? "text-green-500" : "text-red-500"}>
-              ●
-            </span>
-          </p>
-        </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">System</h3>
-          <p className="text-sm font-medium">{stats.system}</p>
-        </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {statCards.map((card, index) => (
+          <StatCard key={index} {...card} />
+        ))}
       </div>
-      
-      <div className="border-t pt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Recent Requests</h2>
-          <Link href="/requests" className="text-sm font-medium text-muted-foreground hover:text-primary">
+
+      <div className="bg-card rounded-xl border overflow-hidden">
+        <div className="p-5 border-b flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-muted rounded-xl">
+              <Music className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Recent Requests</h3>
+              <p className="text-sm text-muted-foreground">Latest activity from your users</p>
+            </div>
+          </div>
+          <Link href="/requests" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
             View All
+            <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="space-y-3">
+        
+        <div className="divide-y">
           {recentRequests.length > 0 ? (
             recentRequests.map((request) => (
-              <div key={request.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium">{request.title}</p>
+              <Link 
+                key={request.id} 
+                href={`/detail/${request.type}/${request.externalId}`}
+                className="flex items-center gap-4 p-5 hover:bg-muted/50 transition-colors group"
+              >
+                {request.coverUrl && (
+                  <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    <img 
+                      src={request.coverUrl} 
+                      alt={request.title} 
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{request.title}</p>
                   {request.subtitle && (
-                    <p className="text-xs text-muted-foreground">{request.subtitle}</p>
+                    <p className="text-sm text-muted-foreground truncate">{request.subtitle}</p>
                   )}
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${request.status === "pending" ? "bg-yellow-100 text-yellow-800" : request.status === "approved" ? "bg-blue-100 text-blue-800" : request.status === "available" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>{request.status}</span>
+                  <div className="flex items-center gap-3 mt-2">
+                    <StatusBadge status={request.status} />
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {request.user.username}
+                    </span>
                     <span className="text-xs text-muted-foreground">
-                      by {request.user.username}
+                      {new Date(request.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
-              </div>
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
+              </Link>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">No recent requests</p>
+            <div className="p-12 text-center">
+              <Music className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-foreground mb-1">No requests yet</h4>
+              <p className="text-sm text-muted-foreground mb-4">Be the first to request some music!</p>
+              <Link 
+                href="/search" 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Music className="h-4 w-4" />
+                Search Music
+              </Link>
+            </div>
           )}
         </div>
       </div>
