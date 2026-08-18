@@ -79,10 +79,21 @@ async function resolveItunesCover(title: string, artist: string): Promise<string
 }
 
 export async function searchMusicBrainz(query: string, limit = 12, offset = 0): Promise<SearchResult[]> {
-  const data = await mbSearch(`/release/?query=${encodeURIComponent(query)}&fmt=json&limit=${limit}&offset=${offset}`);
+  // Prefer releases BY an artist matching the query: the plain query also returns
+  // albums merely *titled* like the search term by unrelated bands (e.g. searching
+  // "radiohead" surfaces "Radiohead" by X-Dream). Fall back to a title search when
+  // no artist matches (e.g. the query is an album name).
+  let data = await mbSearch(
+    `/release/?query=${encodeURIComponent(`artist:"${query}"`)}&fmt=json&limit=${limit * 2}&offset=${offset}`
+  );
+  if (!data?.releases?.length) {
+    data = await mbSearch(`/release/?query=${encodeURIComponent(query)}&fmt=json&limit=${limit * 2}&offset=${offset}`);
+  }
   if (!data?.releases) return [];
 
-  // Rank by relevance, then prefer releases that actually have cover art
+  // Rank by relevance, then prefer releases that actually have cover art,
+  // and de-duplicate by normalized title (multiple editions of one album).
+  const seen = new Set<string>();
   const releases: any[] = (data.releases || [])
     .slice()
     .sort((a: any, b: any) => (b.score || 0) - (a.score || 0))
@@ -90,6 +101,12 @@ export async function searchMusicBrainz(query: string, limit = 12, offset = 0): 
       const ac = a["cover-art-archive"]?.front ? 1 : 0;
       const bc = b["cover-art-archive"]?.front ? 1 : 0;
       return bc - ac;
+    })
+    .filter((r: any) => {
+      const key = `${r.title}`.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
 
   const results = releases.slice(0, limit).map((release: any) => {
