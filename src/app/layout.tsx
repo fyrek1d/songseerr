@@ -9,6 +9,7 @@ export const metadata: Metadata = {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
+    other: [{ rel: "icon", url: "/favicon.ico" }],
   },
 };
 
