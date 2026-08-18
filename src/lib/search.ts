@@ -4,7 +4,7 @@ const MUSICBRAINZ_URL = "https://musicbrainz.org/ws/2";
 const COVERART_URL = "https://coverartarchive.org";
 const ITUNES_URL = "https://itunes.apple.com";
 
-const UA = "SongSeerr/1.0 (https://songseerr.local)";
+const UA = "Songseerr/1.0 (https://songseerr.local)";
 
 // iTunes lookups are cached so repeat searches don't hammer the API
 const coverCache = new Map<string, string | undefined>();
@@ -122,7 +122,8 @@ export async function searchMusicBrainz(query: string, limit = 12, offset = 0): 
 export async function searchMusicBrainzArtists(query: string): Promise<SearchResult[]> {
   const data = await mbSearch(`/artist/?query=${encodeURIComponent(query)}&fmt=json&limit=12`);
   if (!data?.artists) return [];
-  return (data.artists || [])
+
+  const results = (data.artists || [])
     .slice()
     .sort((a: any, b: any) => (b.score || 0) - (a.score || 0))
     .map((artist: any) => ({
@@ -136,6 +137,35 @@ export async function searchMusicBrainzArtists(query: string): Promise<SearchRes
       popularity: artist.score || 0,
       details: { source: "musicbrainz", type: artist.type, country: artist.country, lifeSpan: artist["life-span"] },
     }));
+
+  // Fill missing artist images from iTunes (entity=musicArtist returns artworkUrl)
+  await Promise.all(
+    results.map(async (a: any) => {
+      if (!a.coverUrl) a.coverUrl = await resolveArtistImage(a.title);
+    })
+  );
+
+  return results;
+}
+
+// Resolve an artist image via iTunes (MusicBrainz has no artist art endpoint).
+// MusicBrainz / iTunes artist entities carry no artwork, so grab the artist's
+// top album cover as a stand-in artist image.
+async function resolveArtistImage(artist: string): Promise<string | undefined> {
+  const key = `artist|${artist.toLowerCase()}`;
+  if (coverCache.has(key)) return coverCache.get(key);
+  try {
+    const data = await fetchJson(
+      `${ITUNES_URL}/search?term=${encodeURIComponent(artist)}&entity=album&limit=1&attribute=artistTerm`
+    );
+    const url = data?.results?.[0]?.artworkUrl100;
+    const resolved = url ? url.replace("100x100bb", "600x600bb") : undefined;
+    coverCache.set(key, resolved);
+    return resolved;
+  } catch {
+    coverCache.set(key, undefined);
+    return undefined;
+  }
 }
 
 export async function searchMusicBrainzTracks(query: string): Promise<SearchResult[]> {

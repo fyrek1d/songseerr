@@ -50,7 +50,8 @@ export function CoverImage({
   return (
     <div
       className={cn(
-        "relative aspect-[2/3] w-full overflow-hidden rounded-md bg-muted",
+        "relative w-full overflow-hidden rounded-md bg-muted",
+        type === "artist" ? "aspect-square" : "aspect-[2/3]",
         className
       )}
     >

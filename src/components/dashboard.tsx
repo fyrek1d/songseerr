@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Database,
-  Server,
   Activity,
   User,
   ArrowUpRight,
@@ -16,6 +15,7 @@ import {
   LayoutDashboard,
   Shield,
   ExternalLink,
+  HardDrive,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -68,7 +68,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const healthy = !!(lidarrConfig?.url && lidarrConfig?.apiKey && 
                     navidromeConfig?.url && navidromeConfig?.password);
   
-  const system = "Songseerr";
+  const system = await getStorageInfo();
 
   return {
     active,
@@ -78,6 +78,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     healthy,
     system,
   };
+}
+
+// Report media-storage usage from the mounted /media volume (HDD with music library).
+async function getStorageInfo(): Promise<string> {
+  try {
+    const { statfs } = await import("node:fs/promises");
+    const s = await statfs("/media");
+    const total = s.blocks * s.bsize;
+    const free = s.bavail * s.bsize;
+    const usedPct = total > 0 ? Math.round(((total - free) / total) * 100) : 0;
+    return `${usedPct}% used`;
+  } catch {
+    return "Unavailable";
+  }
 }
 
 export async function getRecentRequests(limit = 5): Promise<RecentRequest[]> {
@@ -151,7 +165,7 @@ export default async function Dashboard() {
       icon: Shield,
       description: stats.healthy ? "All services connected" : "Check integrations",
     },
-    { title: "System", value: stats.system, icon: Server, description: "Music Request System" },
+    { title: "Media Storage", value: stats.system, icon: HardDrive, description: "Used on media drive" },
   ];
 
   return (

@@ -24,7 +24,7 @@ export function Navbar({ session }: { session: any }) {
       <div className="container-main flex h-16 items-center gap-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground">
           <Music className="h-6 w-6 text-primary" />
-          <span>SongSeerr</span>
+          <span>Songseerr</span>
         </Link>
 
         <nav className="flex items-center gap-1 ml-4">

@@ -27,7 +27,7 @@ export function SearchBar({ initialValue = "" }: { initialValue?: string }) {
           placeholder="Search music, artists, albums, tracks..."
           className="pl-12 py-4 text-lg"
         />
-        <Button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2">
+        <Button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 px-4 text-sm">
           Search
         </Button>
       </div>

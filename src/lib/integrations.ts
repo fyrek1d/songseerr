@@ -59,7 +59,7 @@ export async function scanNavidrome(): Promise<LibraryItemInput[]> {
 
   const auth = await fetch(
     `${baseUrl}/rest/auth`,
-    { headers: { "x-subsonic-api-version": "1.16.1", "x-subsonic-client": "SongSeerr" } }
+    { headers: { "x-subsonic-api-version": "1.16.1", "x-subsonic-client": "Songseerr" } }
   ).catch(() => null);
   if (!auth) return [];
 
