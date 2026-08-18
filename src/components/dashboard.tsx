@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getLidarrConfig, getNavidromeConfig } from "@/lib/settings";
+import { getLidarrConfig, getNavidromeConfig, getJellyfinConfig } from "@/lib/settings";
 import Link from "next/link";
 import {
   Music,
@@ -25,6 +25,7 @@ interface DashboardStats {
   attention: number;
   healthy: boolean;
   system: string;
+  integrations: string[];
 }
 
 interface RecentRequest {
@@ -61,12 +62,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const libraryCount = await prisma.libraryItem.count({ where: { type: "music" } });
   const attention = declinedCount;
   
-  const [lidarrConfig, navidromeConfig] = await Promise.all([
+  const [jellyfinConfig, lidarrConfig, navidromeConfig] = await Promise.all([
+    getJellyfinConfig(),
     getLidarrConfig(),
     getNavidromeConfig()
   ]);
-  const healthy = !!(lidarrConfig?.url && lidarrConfig?.apiKey && 
-                    navidromeConfig?.url && navidromeConfig?.password);
+
+  // Health is determined by whichever integrations are actually configured:
+  // Jellyfin is the primary library source; Lidarr/Navidrome are optional.
+  const configured = [
+    jellyfinConfig?.url && jellyfinConfig?.apiKey ? "jellyfin" : null,
+    lidarrConfig?.url && lidarrConfig?.apiKey ? "lidarr" : null,
+    navidromeConfig?.url && navidromeConfig?.password ? "navidrome" : null,
+  ].filter(Boolean);
+  const healthy = configured.length > 0;
   
   const system = await getStorageInfo();
 
@@ -77,6 +86,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     attention,
     healthy,
     system,
+    integrations: configured as string[],
   };
 }
 
@@ -163,7 +173,9 @@ export default async function Dashboard() {
       title: "System Health",
       value: stats.healthy ? "Healthy" : "Degraded",
       icon: Shield,
-      description: stats.healthy ? "All services connected" : "Check integrations",
+      description: stats.healthy
+        ? `Connected: ${stats.integrations.map((s) => s[0].toUpperCase() + s.slice(1)).join(", ")}`
+        : "Check integrations",
     },
     { title: "Media Storage", value: stats.system, icon: HardDrive, description: "Used on media drive" },
   ];

@@ -244,10 +244,57 @@ export async function getReleaseCover(releaseId: string): Promise<string | undef
   }
 }
 
+export async function getReleaseGroupCover(releaseGroupId: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(`${COVERART_URL}/release-group/${releaseGroupId}/front-500`, {
+      signal: AbortSignal.timeout(6000),
+    });
+    return res.ok ? res.url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getArtistDetails(artistId: string): Promise<Record<string, any>> {
   try {
     const data = await mbSearch(`/artist/${artistId}?inc=url-rels+tags+genres&fmt=json`);
-    return data || {};
+    if (!data) return {};
+    // Enrich with a real bio + photo from Wikipedia. MusicBrainz exposes a
+    // wikidata relation; resolve it to the English Wikipedia page title.
+    const relations: any[] = data.relations || data["url-relations"] || [];
+    const wikiRel = relations.find((r: any) => r.type === "wikipedia");
+    const wikidataRel = relations.find((r: any) => r.type === "wikidata");
+    let wikiPage: string | undefined = wikiRel?.url?.resource?.split("/wiki/").pop();
+    if (!wikiPage && wikidataRel?.url?.resource) {
+      try {
+        const wdId = wikidataRel.url.resource.split("/wiki/").pop();
+        const wd = await fetchJson(
+          `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${encodeURIComponent(wdId)}&props=sitelinks&sitefilter=enwiki&format=json`,
+          undefined,
+          6000
+        );
+        wikiPage = wd?.entities?.[wdId]?.sitelinks?.enwiki?.title;
+      } catch {
+        // ignore; bio/image enrichment is best-effort
+      }
+    }
+    if (wikiPage) {
+      try {
+        const wikiData = await fetchJson(
+          `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiPage)}`,
+          undefined,
+          6000
+        );
+        if (wikiData) {
+          data._bio = wikiData.extract;
+          data._image = wikiData.thumbnail?.source;
+          data._wikiUrl = wikiData.content_urls?.desktop?.page;
+        }
+      } catch {
+        // ignore; bio/image enrichment is best-effort
+      }
+    }
+    return data;
   } catch {
     return {};
   }

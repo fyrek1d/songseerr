@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Discover", icon: Home },
+  { href: "/", label: "Dashboard", icon: Home },
   { href: "/search", label: "Search", icon: Search },
   { href: "/requests", label: "Requests", icon: Music },
   { href: "/library", label: "Library", icon: List },

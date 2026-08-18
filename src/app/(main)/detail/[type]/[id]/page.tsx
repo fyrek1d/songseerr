@@ -6,6 +6,7 @@ import {
   getReleaseDetails,
   getReleaseTracks,
   getReleaseCover,
+  getReleaseGroupCover,
   getArtistDetails,
   getArtistReleases,
   getRecordingDetails,
@@ -135,12 +136,18 @@ export default async function DetailPage({
 
     const releases = await getArtistReleases(id);
     const covers = await Promise.all(
-      releases.map((rg: any) => getReleaseCover(rg.id).catch(() => undefined))
+      releases.map((rg: any) => getReleaseGroupCover(rg.id).catch(() => undefined))
     );
 
     const alreadyRequested = await prisma.request.findFirst({
       where: { externalId: id, type: "artist", status: { in: ["pending", "approved"] } },
     });
+
+    const artistImage = details._image || covers.find(Boolean);
+    const bio =
+      details._bio ||
+      details.disambiguation ||
+      `${details.name} is a music artist.`;
 
     return (
       <div className="space-y-8">
@@ -149,7 +156,7 @@ export default async function DetailPage({
         <div className="flex flex-col gap-8 md:flex-row">
           <div className="w-56 shrink-0">
             <CoverImage
-              coverUrl={covers.find(Boolean)}
+              coverUrl={artistImage}
               title={details.name}
               type="artist"
             />
@@ -164,7 +171,7 @@ export default async function DetailPage({
             </div>
 
             <p className="max-w-2xl leading-relaxed text-muted-foreground">
-              {details.disambiguation || `${details.name} is a music artist.`}
+              {bio}
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -202,6 +209,21 @@ export default async function DetailPage({
               >
                 <ExternalLink className="h-4 w-4" /> MusicBrainz
               </Button>
+              {details._wikiUrl && (
+                <Button
+                  variant="outline"
+                  className="gap-1"
+                  render={
+                    <a
+                      href={details._wikiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
+                >
+                  <ExternalLink className="h-4 w-4" /> Wikipedia
+                </Button>
+              )}
               <ReportIssueButton
                 itemTitle={details.name}
                 itemType="artist"

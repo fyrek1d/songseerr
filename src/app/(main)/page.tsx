@@ -12,7 +12,7 @@ const DISCOVER_QUERIES = [
   { label: "Classical Masterpieces", query: "classical" },
 ];
 
-export default async function DiscoverPage() {
+export default async function DashboardPage() {
   return (
     <div className="container-main space-y-10">
       <section className="page-section pt-12 pb-8 text-center">
