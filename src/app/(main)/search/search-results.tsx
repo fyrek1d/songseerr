@@ -1,20 +1,19 @@
 "use client";
 
 import { useMemo } from "react";
-import { SearchBar as SearchBarComponent, SearchCategory } from "@/components/search-bar";
+import { SearchBar as SearchBarComponent } from "@/components/search-bar";
 import { MediaCard } from "@/components/media-card";
 import { FilterButtons } from "@/components/filter-buttons";
 
 interface SearchResultsProps {
   query: string;
-  category: "music";
   field: string;
   initialMusic: any[];
   initialArtists: any[];
   initialTracks: any[];
 }
 
-export default function SearchResults({ query, category, field, initialMusic, initialArtists, initialTracks }: SearchResultsProps) {
+export default function SearchResults({ query, field, initialMusic, initialArtists, initialTracks }: SearchResultsProps) {
   const MUSIC_FIELDS = [
     { value: "", label: "All fields" },
     { value: "album", label: "Album" },
@@ -57,7 +56,7 @@ export default function SearchResults({ query, category, field, initialMusic, in
           Results for "{query}" (Music)
         </h1>
         <div className="max-w-md flex-1">
-          <SearchBarComponent initialValue={query} initialCategory={category} />
+          <SearchBarComponent initialValue={query} />
         </div>
       </div>
 
@@ -65,7 +64,7 @@ export default function SearchResults({ query, category, field, initialMusic, in
         <p className="text-muted-foreground">No results found. Try a different search or field.</p>
       ) : (
         <>
-          <FilterButtons fields={fields} activeField={activeField} query={query} category={category} />
+          <FilterButtons fields={fields} activeField={activeField} query={query} category="music" />
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {results.map((item: any) => {
               const type = item.type || "music";

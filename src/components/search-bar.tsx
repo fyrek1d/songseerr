@@ -5,48 +5,32 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type SearchCategory = "music";
-
-export function SearchBar({ initialValue = "", initialCategory = "music" }: { initialValue?: string; initialCategory?: SearchCategory }) {
+export function SearchBar({ initialValue = "" }: { initialValue?: string }) {
   const router = useRouter();
   const [query, setQuery] = useState(initialValue);
-  const [category, setCategory] = useState<SearchCategory>(initialCategory);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}&category=${category}`);
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   }
 
-  function handleCategoryChange(value: SearchCategory | null) {
-    if (value) setCategory(value);
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="flex w-full gap-2">
-      <div className="w-36 shrink-0">
-        <Select value={category} onValueChange={handleCategoryChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="music">Music</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search music, artists, albums, tracks..."
-          className="pl-9"
+          className="pl-12 py-4 text-lg"
         />
+        <Button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2">
+          Search
+        </Button>
       </div>
-      <Button type="submit">Search</Button>
     </form>
   );
 }
