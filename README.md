@@ -2,7 +2,7 @@
 
 Unified music request management for self-hosted homeservers.
 
-A single-container web app similar to Jellyseerr, but for **music**. Runs on Next.js 14 with SQLite, providing discovery, search, request management, and library integration for music.
+SongSeerr is a self-hosted music request manager inspired by Jellyseerr and Overseerr. Search for music, request albums and artists, manage approvals, and send approved requests to Lidarr. Works with Jellyfin and Navidrome. Runs on Next.js 14 with SQLite, providing discovery, search, request management, and library integration for music.
 
 ## Features
 
@@ -70,3 +70,13 @@ curl https://mediaseer.local/api/cron/library-scan?token=YOUR_CRON_SECRET
 ## License
 
 MIT
+
+## Tags
+Jellyseerr for music
+Overseerr for music
+Self-hosted music request manager
+Music request manager for Lidarr
+Jellyseerr-style music requests
+Music requests with Lidarr
+Self-hosted music requests
+Music discovery and request management
