@@ -44,9 +44,14 @@ export function SettingsClient({ initial }: { initial: Settings }) {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Request Rules</h1>
+    <div className="max-w-3xl space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Request Rules</h1>
+          <p className="text-sm text-muted-foreground">
+            Control how requests flow through the queue.
+          </p>
+        </div>
         <Button onClick={save} disabled={saving}>
           <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save"}
         </Button>
@@ -59,10 +64,10 @@ export function SettingsClient({ initial }: { initial: Settings }) {
 MusicBrainz powers music discovery and metadata.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4 py-2">
             <div>
               <Label>MusicBrainz</Label>
               <p className="text-xs text-muted-foreground">Music discovery and metadata</p>
@@ -80,8 +85,8 @@ MusicBrainz powers music discovery and metadata.
           <CardTitle>Request rules</CardTitle>
           <CardDescription>Control how requests flow through the queue.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between gap-4 py-2">
             <div>
               <Label>Auto-approve trusted users</Label>
               <p className="text-xs text-muted-foreground">
@@ -94,13 +99,18 @@ MusicBrainz powers music discovery and metadata.
             />
           </div>
           <div className="space-y-2">
-            <Label>Request limit (per 30 days)</Label>
+            <Label htmlFor="request-limit">Request limit (per 30 days)</Label>
             <Input
+              id="request-limit"
               type="number"
-              min={1}
+              min={0}
               value={settings.requestLimit}
-              onChange={(e) => update("requestLimit", parseInt(e.target.value) || 1)}
+              onChange={(e) => update("requestLimit", parseInt(e.target.value) || 0)}
             />
+            <p className="text-xs text-muted-foreground">
+              Set to 0 for no limit. Regular users&apos; requests still require manual
+              approval; trusted users are auto-approved.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -112,13 +122,16 @@ MusicBrainz powers music discovery and metadata.
             A webhook (e.g. ntfy.sh or Discord) receives request lifecycle events.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <Label>Webhook URL</Label>
-          <Input
-            value={settings.webhookUrl || ""}
-            onChange={(e) => update("webhookUrl", e.target.value)}
-            placeholder="https://ntfy.sh/your-topic"
-          />
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="webhook-url">Webhook URL</Label>
+            <Input
+              id="webhook-url"
+              value={settings.webhookUrl || ""}
+              onChange={(e) => update("webhookUrl", e.target.value)}
+              placeholder="https://ntfy.sh/your-topic"
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

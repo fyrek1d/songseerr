@@ -1,8 +1,8 @@
-# SongSeerr
+# Songseerr
 
 Unified music request management for self-hosted homeservers.
 
-SongSeerr is a self-hosted music request manager inspired by Jellyseerr and Overseerr. Search for music, request albums and artists, manage approvals, and send approved requests to Lidarr. Works with Jellyfin and Navidrome. Runs on Next.js 14 with SQLite, providing discovery, search, request management, and library integration for music.
+Songseerr is a self-hosted music request manager inspired by Jellyseerr and Overseerr. Search for music, request albums and artists, manage approvals, and send approved requests to Lidarr. Works with Jellyfin and Navidrome. Runs on Next.js 14 with SQLite, providing discovery, search, request management, and library integration for music.
 
 ## Features
 
@@ -53,7 +53,7 @@ Environment variables:
 
 ## Library Integration
 
-SongSeerr can detect already-owned content on these platforms:
+Songseerr can detect already-owned content on these platforms:
 
 - **Jellyfin** — detects albums
 - **Navidrome** — detects music via Subsonic API (optional)
@@ -65,7 +65,7 @@ Configure them in the Admin → Integrations panel.
 To trigger library scans on a schedule, hit the cron endpoint:
 
 ```
-curl https://mediaseer.local/api/cron/library-scan?token=YOUR_CRON_SECRET
+curl https://songseerr.local/api/cron/library-scan?token=YOUR_CRON_SECRET
 ```
 
 ## License

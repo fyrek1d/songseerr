@@ -1,11 +1,11 @@
 services:
-  mediaseer:
+  songseerr:
     build: .
-    container_name: mediaseer
+    container_name: songseerr
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=file:/data/mediaseer.db
+      - DATABASE_URL=file:/data/songseerr.db
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-me-in-production}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - CRON_SECRET=${CRON_SECRET:-cron-secret}

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notifyWebhook } from "@/lib/requests";
 
 export async function POST(request: NextRequest) {
-  const signature = request.headers.get("x-mediaseer-token");
+  const signature = request.headers.get("x-songseerr-token");
   if (signature !== process.env.WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

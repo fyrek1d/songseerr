@@ -67,14 +67,14 @@ export async function scanNavidrome(): Promise<LibraryItemInput[]> {
   const token = body?.["subsonic-response"]?.token;
 
   const artists = await fetch(
-    `${baseUrl}/rest/getArtists?u=${config.username || "mediaseer"}&t=${token || ""}&s=${config.password}&v=1.16.1&c=mediaseer&f=json`
+    `${baseUrl}/rest/getArtists?u=${config.username || "songseerr"}&t=${token || ""}&s=${config.password}&v=1.16.1&c=songseerr&f=json`
   ).then((r) => r.json()).catch(() => null);
 
   const artistList = artists?.["subsonic-response"]?.artists?.index || [];
   for (const index of artistList) {
     for (const artist of index.artist || []) {
       const albums = await fetch(
-        `${baseUrl}/rest/getArtist?u=${config.username || "mediaseer"}&t=${token || ""}&s=${config.password}&v=1.16.1&c=mediaseer&f=json&id=${artist.id}`
+        `${baseUrl}/rest/getArtist?u=${config.username || "songseerr"}&t=${token || ""}&s=${config.password}&v=1.16.1&c=songseerr&f=json&id=${artist.id}`
       ).then((r) => r.json()).catch(() => null);
 
       for (const album of albums?.["subsonic-response"]?.artist?.album || []) {
@@ -84,7 +84,7 @@ export async function scanNavidrome(): Promise<LibraryItemInput[]> {
           type: "music",
           externalId: album.id,
           source: "navidrome",
-          coverUrl: `${baseUrl}/rest/getCoverArt?u=${config.username || "mediaseer"}&t=${token || ""}&s=${config.password}&v=1.16.1&c=mediaseer&id=${album.id}`,
+          coverUrl: `${baseUrl}/rest/getCoverArt?u=${config.username || "songseerr"}&t=${token || ""}&s=${config.password}&v=1.16.1&c=songseerr&id=${album.id}`,
         });
       }
     }

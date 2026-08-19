@@ -12,6 +12,17 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -21,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { UserPlus } from "lucide-react";
 
 type User = {
   id: string;
@@ -37,10 +49,28 @@ const roleColors: Record<string, string> = {
   user: "bg-secondary text-secondary-foreground",
 };
 
+const roleOptions = [
+  { value: "user", label: "Standard" },
+  { value: "trusted", label: "Trusted" },
+  { value: "admin", label: "Admin" },
+];
+
 export function UsersClient({ users }: { users: User[] }) {
   const router = useRouter();
   const { toast } = useToast();
   const [changing, setChanging] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    role: "user",
+  });
+
+  function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
 
   async function changeRole(id: string, role: string) {
     setChanging(id);
@@ -58,9 +88,107 @@ export function UsersClient({ users }: { users: User[] }) {
     }
   }
 
+  async function createUser() {
+    if (!form.username || !form.email || !form.password) {
+      toast({ title: "All fields are required", variant: "destructive" });
+      return;
+    }
+    if (form.password.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    setSubmitting(false);
+    if (res.ok) {
+      toast({ title: "User created", variant: "success" });
+      setOpen(false);
+      setForm({ username: "", email: "", password: "", role: "user" });
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => null);
+      toast({
+        title: data?.error || "Failed to create user",
+        variant: "destructive",
+      });
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Users</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Users</h1>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger render={<Button />}>
+            <UserPlus className="h-4 w-4" />
+            Add user
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add user</DialogTitle>
+              <DialogDescription>
+                Create a new account. Regular users&apos; requests require manual
+                approval; trusted users are auto-approved.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-username">Username</Label>
+                <Input
+                  id="new-username"
+                  value={form.username}
+                  onChange={(e) => update("username", e.target.value)}
+                  placeholder="e.g. jane"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-email">Email</Label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  placeholder="jane@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  placeholder="Minimum 6 characters"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={form.role} onValueChange={(v) => v && update("role", v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={createUser} disabled={submitting}>
+                {submitting ? "Creating..." : "Create user"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
       <div className="rounded-lg border">
         <Table>
           <TableHeader>

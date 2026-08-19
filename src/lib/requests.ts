@@ -171,6 +171,7 @@ export async function notifyWebhook(event: string, payload: Record<string, any>)
 
 export async function canRequest(userId: string): Promise<boolean> {
   const settings = await getSettings();
+  if (settings.requestLimit <= 0) return true;
   const count = await prisma.request.count({
     where: {
       userId,

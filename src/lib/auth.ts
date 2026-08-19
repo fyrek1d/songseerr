@@ -58,5 +58,5 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || "mediaseer-dev-secret-change-in-production",
+  secret: process.env.NEXTAUTH_SECRET || "songseerr-dev-secret-change-in-production",
 };

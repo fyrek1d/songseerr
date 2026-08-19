@@ -27,8 +27,8 @@ export interface AppSettingsData {
 
 export const DEFAULT_SETTINGS: AppSettingsData = {
   musicBrainzEnabled: true,
-  autoApproveTrusted: false,
-  requestLimit: 10,
+  autoApproveTrusted: true,
+  requestLimit: 0,
   webhookUrl: undefined,
   libraryIntegration: {},
 };
