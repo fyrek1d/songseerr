@@ -54,6 +54,26 @@ async function arrPut(baseUrl: string, apiKey: string, path: string, body: any) 
   return res.json();
 }
 
+// Lidarr stores MusicBrainz *release-group* ids as `foreignAlbumId`, but
+// Songseerr's music requests carry a MusicBrainz *release* id. Resolve the
+// release-group id so album lookups/dedup against Lidarr actually match.
+async function resolveReleaseGroupId(releaseId: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(
+      `https://musicbrainz.org/ws/2/release/${encodeURIComponent(releaseId)}?inc=release-groups&fmt=json`,
+      {
+        headers: { "User-Agent": "Songseerr/1.0 (https://songseerr.local)" },
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    return data?.["release-group"]?.id;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function searchReadarr(query: string): Promise<ArrSearchResult[]> {
   // Readarr functionality removed - music only
   return [];
@@ -84,9 +104,12 @@ export async function hasInLidarr(externalId: string, type?: string): Promise<bo
     return false;
   }
 
-  const data = await arrRequest(config.url, config.apiKey, `/api/v1/album?foreignAlbumId=${encodeURIComponent(externalId)}`);
+  // Lidarr keys albums by MusicBrainz release-group id; Songseerr's externalId
+  // is a release id, so resolve it before comparing.
+  const rgId = (await resolveReleaseGroupId(externalId)) || externalId;
+  const data = await arrRequest(config.url, config.apiKey, `/api/v1/album?foreignAlbumId=${encodeURIComponent(rgId)}`);
   if (!Array.isArray(data)) return false;
-  return data.some((album: any) => album.foreignAlbumId === externalId);
+  return data.some((album: any) => album.foreignAlbumId === rgId);
 }
 
 export async function pushToReadarr(title: string, externalId: string, authorName?: string): Promise<boolean> {
@@ -125,6 +148,59 @@ export async function pushToLidarr(title: string, externalId: string, artistName
 
   if (!match || !match.artist) return false;
 
+  // Does this artist already exist in Lidarr? (Lidarr ignores the
+  // foreignArtistId query filter, so find the matching row ourselves.)
+  const existing = await arrRequest(
+    config.url,
+    config.apiKey,
+    `/api/v1/artist?foreignArtistId=${encodeURIComponent(match.artist.foreignArtistId)}`
+  );
+  const existingArtist =
+    Array.isArray(existing) && existing.length > 0
+      ? existing.find((a: any) => a.foreignArtistId === match.artist.foreignArtistId) || null
+      : null;
+
+  if (existingArtist) {
+    // Artist already monitored — add the specific requested album (Lidarr keys
+    // albums by MusicBrainz release-group id) and trigger a search for it.
+    const rgId = await resolveReleaseGroupId(externalId);
+    if (rgId) {
+      const existingAlbums = await arrRequest(
+        config.url,
+        config.apiKey,
+        `/api/v1/album?foreignAlbumId=${encodeURIComponent(rgId)}`
+      );
+      const alreadyMonitored =
+        Array.isArray(existingAlbums) &&
+        existingAlbums.some((a: any) => a.foreignAlbumId === rgId && a.monitored);
+      if (!alreadyMonitored) {
+        const lookup = await arrRequest(
+          config.url,
+          config.apiKey,
+          `/api/v1/album/lookup?term=mbid:${encodeURIComponent(rgId)}`
+        );
+        const album = Array.isArray(lookup)
+          ? lookup.find((a: any) => a.foreignAlbumId === rgId)
+          : null;
+        if (album) {
+          album.artistId = existingArtist.id;
+          album.monitored = true;
+          delete album.id;
+          const added = await arrPost(config.url, config.apiKey, "/api/v1/album", album);
+          if (added?.id) {
+            await arrPost(config.url, config.apiKey, "/api/v1/command", {
+              name: "AlbumSearch",
+              albumIds: [added.id],
+            });
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  // Artist not in Lidarr yet — add the artist with all albums monitored and
+  // searchForMissingAlbums so the requested release gets grabbed.
   const artistPayload = {
     ...match.artist,
     status: "active" as const,
@@ -150,12 +226,12 @@ export async function pushToLidarr(title: string, externalId: string, artistName
   );
 
   if (!result) {
-    const existing = await arrRequest(
+    const existingCheck = await arrRequest(
       config.url,
       config.apiKey,
       `/api/v1/artist?foreignArtistId=${encodeURIComponent(match.artist.foreignArtistId)}`
     );
-    if (Array.isArray(existing) && existing.length > 0) {
+    if (Array.isArray(existingCheck) && existingCheck.length > 0) {
       return true;
     }
   }
