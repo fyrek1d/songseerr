@@ -136,7 +136,9 @@ export default async function DetailPage({
 
     const releases = await getArtistReleases(id);
     const covers = await Promise.all(
-      releases.map((rg: any) => getReleaseGroupCover(rg.id).catch(() => undefined))
+      releases.map((rel: any) =>
+        getReleaseGroupCover(rel["release-group"]?.id).catch(() => undefined)
+      )
     );
 
     const alreadyRequested = await prisma.request.findFirst({
@@ -237,8 +239,8 @@ export default async function DetailPage({
           <div className="rounded-lg border">
             <div className="border-b px-4 py-3 font-medium">Releases</div>
             <ol className="divide-y">
-              {releases.map((rg: any, i: number) => (
-                <li key={rg.id} className="flex items-center justify-between px-4 py-2">
+              {releases.map((rel: any, i: number) => (
+                <li key={rel.id} className="flex items-center justify-between px-4 py-2">
                   <div className="flex items-center gap-3">
                     {covers[i] ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -248,18 +250,20 @@ export default async function DetailPage({
                     )}
                     <div>
                       <Link
-                        href={`/detail/music/${rg.id}`}
+                        href={`/detail/music/${rel.id}`}
                         className="font-medium hover:underline"
                       >
-                        {rg.title}
+                        {rel.title}
                       </Link>
-                      {rg["first-release-date"] && (
+                      {rel.date && (
                         <p className="text-xs text-muted-foreground">
-                          {rg["first-release-date"]}
+                          {rel.date}
                         </p>
                       )}
                     </div>
-                    <Badge variant="secondary">{rg["primary-type"] || "Release"}</Badge>
+                    <Badge variant="secondary">
+                      {rel["release-group"]?.["primary-type"] || "Release"}
+                    </Badge>
                   </div>
                 </li>
               ))}

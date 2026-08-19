@@ -6,8 +6,55 @@ const ITUNES_URL = "https://itunes.apple.com";
 
 const UA = "Songseerr/1.0 (https://songseerr.local)";
 
-// iTunes lookups are cached so repeat searches don't hammer the API
+// iTunes / Cover Art Archive lookups are cached so repeat searches don't hammer the APIs
 const coverCache = new Map<string, string | undefined>();
+const caaCache = new Map<string, boolean>();
+
+function normalizeForMatch(s: string): string {
+  return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+// Loose-but-safe equality: exact match, or one side fully contains the other
+// (e.g. "Is This It" vs "Is This It (Remastered)"). Short strings can't match
+// via containment, to avoid nonsense collisions.
+function fuzzyEqual(a: string, b: string): boolean {
+  const na = normalizeForMatch(a);
+  const nb = normalizeForMatch(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.length >= 4 && na.includes(nb)) return true;
+  if (nb.length >= 4 && nb.includes(na)) return true;
+  return false;
+}
+
+// Cheap existence check for a Cover Art Archive image URL. front-250 responds
+// with a 307 redirect to the real image (or 404 when no art exists) — do NOT
+// follow it: hitting the image CDN is slow and has caused these checks to take
+// 3-6s each (and time out for valid covers). The redirect code alone answers it.
+async function hasCover(url: string): Promise<boolean> {
+  if (caaCache.has(url)) return caaCache.get(url)!;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "HEAD",
+        redirect: "manual",
+        signal: AbortSignal.timeout(5000),
+      });
+      const ok = res.status >= 200 && res.status < 400;
+      caaCache.set(url, ok);
+      return ok;
+    } catch {
+      if (attempt === 1) {
+        caaCache.set(url, false);
+        return false;
+      }
+      // brief pause before retry
+      await new Promise((r) => setTimeout(r, 200));
+    }
+  }
+  caaCache.set(url, false);
+  return false;
+}
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,16 +106,21 @@ function artistOf(item: any): string {
     .join(", ");
 }
 
-// Resolve a cover via iTunes (fast, reliable, NOT archive.org-dependent).
-// Falls back to nothing so the card shows the placeholder icon.
+// Resolve a cover via iTunes, but ONLY when the album genuinely matches
+// (artist + title both fuzzy-match). iTunes returns unrelated albums for titles
+// it doesn't carry (e.g. The Strokes' "Is This It" → "Angles"), so blindly
+// taking the first result produced wrong art.
 async function resolveItunesCover(title: string, artist: string): Promise<string | undefined> {
   const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
   if (coverCache.has(key)) return coverCache.get(key);
   try {
     const data = await fetchJson(
-      `${ITUNES_URL}/search?term=${encodeURIComponent(`${artist} ${title}`)}&entity=album&limit=1`
+      `${ITUNES_URL}/search?term=${encodeURIComponent(`${artist} ${title}`)}&entity=album&limit=25`
     );
-    const url = data?.results?.[0]?.artworkUrl100;
+    const match = (data?.results || []).find(
+      (r: any) => r.artistName && fuzzyEqual(r.artistName, artist) && fuzzyEqual(r.collectionName, title)
+    );
+    const url = match?.artworkUrl100;
     const resolved = url ? url.replace("100x100bb", "600x600bb") : undefined;
     coverCache.set(key, resolved);
     return resolved;
@@ -109,27 +161,46 @@ export async function searchMusicBrainz(query: string, limit = 12, offset = 0): 
       return true;
     });
 
-  const results = releases.slice(0, limit).map((release: any) => {
+  const results: SearchResult[] = releases.slice(0, limit).map((release: any) => {
     const artist = artistOf(release);
     return {
       id: release.id,
       type: "music" as const,
       title: release.title,
       subtitle: artist || "Unknown artist",
-      coverUrl: release["cover-art-archive"]?.front
-        ? `${COVERART_URL}/release/${release.id}/front-250`
-        : undefined,
+      coverUrl: undefined as string | undefined,
       externalUrl: `https://musicbrainz.org/release/${release.id}`,
       year: release.date ? parseInt(release.date.slice(0, 4), 10) : undefined,
       popularity: release.score || 0,
-      details: { source: "musicbrainz", releaseDate: release.date, hasCover: release["cover-art-archive"]?.front },
+      details: {
+        source: "musicbrainz",
+        releaseDate: release.date,
+        releaseGroupId: release["release-group"]?.id,
+      },
     };
   });
 
-  // Fill missing covers from iTunes (parallel, cached)
+  // Resolve covers in parallel: Cover Art Archive (release-group art, most
+  // reliable) first, then a verified iTunes lookup. The MB search response
+  // never includes cover-art-archive, so the old unverified iTunes grab is
+  // what produced wrong/missing art.
   await Promise.all(
-    results.map(async (r: any) => {
-      if (!r.coverUrl) r.coverUrl = await resolveItunesCover(r.title, r.subtitle);
+    releases.slice(0, limit).map(async (release: any, i: number) => {
+      if (!results[i]) return;
+      const rgId = release["release-group"]?.id;
+      if (rgId) {
+        const rgUrl = `${COVERART_URL}/release-group/${rgId}/front-250`;
+        if (await hasCover(rgUrl)) {
+          results[i].coverUrl = rgUrl;
+          return;
+        }
+      }
+      const relUrl = `${COVERART_URL}/release/${release.id}/front-250`;
+      if (await hasCover(relUrl)) {
+        results[i].coverUrl = relUrl;
+        return;
+      }
+      results[i].coverUrl = await resolveItunesCover(results[i].title, results[i].subtitle);
     })
   );
 
@@ -166,16 +237,17 @@ export async function searchMusicBrainzArtists(query: string): Promise<SearchRes
 }
 
 // Resolve an artist image via iTunes (MusicBrainz has no artist art endpoint).
-// MusicBrainz / iTunes artist entities carry no artwork, so grab the artist's
-// top album cover as a stand-in artist image.
+// Only use a result whose artistName actually matches, so a fuzzy search term
+// doesn't show an unrelated artist's album cover.
 async function resolveArtistImage(artist: string): Promise<string | undefined> {
   const key = `artist|${artist.toLowerCase()}`;
   if (coverCache.has(key)) return coverCache.get(key);
   try {
     const data = await fetchJson(
-      `${ITUNES_URL}/search?term=${encodeURIComponent(artist)}&entity=album&limit=1&attribute=artistTerm`
+      `${ITUNES_URL}/search?term=${encodeURIComponent(artist)}&entity=album&limit=25&attribute=artistTerm`
     );
-    const url = data?.results?.[0]?.artworkUrl100;
+    const match = (data?.results || []).find((r: any) => r.artistName && fuzzyEqual(r.artistName, artist));
+    const url = match?.artworkUrl100;
     const resolved = url ? url.replace("100x100bb", "600x600bb") : undefined;
     coverCache.set(key, resolved);
     return resolved;
@@ -188,25 +260,47 @@ async function resolveArtistImage(artist: string): Promise<string | undefined> {
 export async function searchMusicBrainzTracks(query: string): Promise<SearchResult[]> {
   const data = await mbSearch(`/recording/?query=${encodeURIComponent(query)}&fmt=json&limit=12`);
   if (!data?.recordings) return [];
-  return (data.recordings || [])
+
+  const sorted = (data.recordings || [])
     .slice()
-    .sort((a: any, b: any) => (b.score || 0) - (a.score || 0))
-    .map((recording: any) => {
-      const artist = artistOf(recording);
+    .sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
+
+  const results = sorted.map((recording: any) => {
+    const artist = artistOf(recording);
+    const release =
+      recording.releases?.find((r: any) => r["cover-art-archive"]?.front) || recording.releases?.[0];
+    return {
+      id: recording.id,
+      type: "track" as const,
+      title: recording.title,
+      subtitle: artist || "Unknown artist",
+      coverUrl: undefined as string | undefined,
+      externalUrl: `https://musicbrainz.org/recording/${recording.id}`,
+      year: release?.date ? parseInt(release.date.slice(0, 4), 10) : undefined,
+      popularity: recording.score || 0,
+      details: { source: "musicbrainz", releaseId: release?.id, releaseTitle: release?.title },
+    };
+  });
+
+  // Verify the release's Cover Art Archive image actually exists before using
+  // it, then fall back to a verified iTunes match.
+  await Promise.all(
+    results.map(async (r: any, i: number) => {
+      const recording = sorted[i];
       const release =
-        recording.releases?.find((r: any) => r["cover-art-archive"]?.front) || recording.releases?.[0];
-      return {
-        id: recording.id,
-        type: "track" as const,
-        title: recording.title,
-        subtitle: artist || "Unknown artist",
-        coverUrl: release ? `${COVERART_URL}/release/${release.id}/front-250` : undefined,
-        externalUrl: `https://musicbrainz.org/recording/${recording.id}`,
-        year: release?.date ? parseInt(release.date.slice(0, 4), 10) : undefined,
-        popularity: recording.score || 0,
-        details: { source: "musicbrainz", releaseId: release?.id, releaseTitle: release?.title },
-      };
-    });
+        recording?.releases?.find((x: any) => x["cover-art-archive"]?.front) || recording?.releases?.[0];
+      if (release?.id) {
+        const url = `${COVERART_URL}/release/${release.id}/front-250`;
+        if (await hasCover(url)) {
+          r.coverUrl = url;
+          return;
+        }
+      }
+      r.coverUrl = await resolveItunesCover(r.title, r.subtitle);
+    })
+  );
+
+  return results;
 }
 
 // Unified search now only searches music
@@ -302,8 +396,35 @@ export async function getArtistDetails(artistId: string): Promise<Record<string,
 
 export async function getArtistReleases(artistId: string): Promise<any[]> {
   try {
-    const data = await mbSearch(`/release-group?artist=${artistId}&type=album|ep&limit=12&fmt=json`);
-    return data?.["release-groups"] || [];
+    // Fetch releases (not release-groups) so each item carries a real release id
+    // the /detail/music/:id page can look up. Dedupe by release-group so each
+    // distinct album appears once, preferring official Album/EP releases.
+    const data = await mbSearch(
+      `/release?artist=${artistId}&inc=release-groups+artist-credits&limit=100&fmt=json`
+    );
+    const releases: any[] = data?.releases || [];
+    const seen = new Set<string>();
+    const deduped: any[] = [];
+    for (const rel of releases) {
+      const rg = rel["release-group"];
+      if (!rg || seen.has(rg.id)) continue;
+      seen.add(rg.id);
+      deduped.push(rel);
+    }
+    const typeRank: Record<string, number> = {
+      Album: 0,
+      EP: 1,
+      Single: 2,
+      Broadcast: 3,
+      Other: 4,
+    };
+    deduped.sort((a, b) => {
+      const ra = typeRank[a["release-group"]?.["primary-type"] ?? "Other"] ?? 5;
+      const rb = typeRank[b["release-group"]?.["primary-type"] ?? "Other"] ?? 5;
+      if (ra !== rb) return ra - rb;
+      return (a.date || "").localeCompare(b.date || "");
+    });
+    return deduped.slice(0, 12);
   } catch {
     return [];
   }
