@@ -46,12 +46,7 @@ export function SettingsClient({ initial }: { initial: Settings }) {
   return (
     <div className="max-w-3xl space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Request Rules</h1>
-          <p className="text-sm text-muted-foreground">
-            Control how requests flow through the queue.
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold">Request Rules</h1>
         <Button onClick={save} disabled={saving}>
           <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save"}
         </Button>
@@ -83,21 +78,12 @@ MusicBrainz powers music discovery and metadata.
       <Card>
         <CardHeader>
           <CardTitle>Request rules</CardTitle>
-          <CardDescription>Control how requests flow through the queue.</CardDescription>
+          <CardDescription>
+            Control how requests flow through the queue. Requests from Trusted users
+            skip the queue.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center justify-between gap-4 py-2">
-            <div>
-              <Label>Auto-approve trusted users</Label>
-              <p className="text-xs text-muted-foreground">
-                Requests from Trusted users skip the queue.
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoApproveTrusted}
-              onCheckedChange={(v) => update("autoApproveTrusted", v)}
-            />
-          </div>
           <div className="space-y-2">
             <Label htmlFor="request-limit">Request limit (per 30 days)</Label>
             <Input

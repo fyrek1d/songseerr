@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Trash2 } from "lucide-react";
 
 type User = {
   id: string;
@@ -55,10 +55,12 @@ const roleOptions = [
   { value: "admin", label: "Admin" },
 ];
 
-export function UsersClient({ users }: { users: User[] }) {
+export function UsersClient({ users, currentUserId }: { users: User[]; currentUserId?: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const [changing, setChanging] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -113,6 +115,27 @@ export function UsersClient({ users }: { users: User[] }) {
       const data = await res.json().catch(() => null);
       toast({
         title: data?.error || "Failed to create user",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function deleteUser() {
+    if (!deleteTarget) return;
+    setDeleting(deleteTarget.id);
+    const res = await fetch(`/api/users/${deleteTarget.id}`, {
+      method: "DELETE",
+    });
+    setDeleting(null);
+    if (res.ok) {
+      toast({ title: "User deleted", variant: "success" });
+      setDeleteTarget(null);
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => null);
+      setDeleteTarget(null);
+      toast({
+        title: data?.error || "Failed to delete user",
         variant: "destructive",
       });
     }
@@ -214,26 +237,68 @@ export function UsersClient({ users }: { users: User[] }) {
                   {format(new Date(user.createdAt), "MMM d, yyyy")}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Select
-                    value={user.role}
-                    onValueChange={(v) => v && changeRole(user.id, v)}
-                    disabled={changing === user.id}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">Standard</SelectItem>
-                      <SelectItem value="trusted">Trusted</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-end gap-2">
+                    <Select
+                      value={user.role}
+                      onValueChange={(v) => v && changeRole(user.id, v)}
+                      disabled={changing === user.id}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">Standard</SelectItem>
+                        <SelectItem value="trusted">Trusted</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={deleting === user.id || user.id === currentUserId}
+                      title={
+                        user.id === currentUserId
+                          ? "You can't delete your own account"
+                          : "Delete user"
+                      }
+                      onClick={() => setDeleteTarget(user)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete user</DialogTitle>
+            <DialogDescription>
+              Delete {deleteTarget?.username || "this user"}? This also removes their
+              requests and collections.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteUser}
+              disabled={deleting === deleteTarget?.id}
+            >
+              {deleting === deleteTarget?.id ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
