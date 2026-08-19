@@ -8,7 +8,8 @@ SongSeerr is a self-hosted music request manager inspired by Jellyseerr and Over
 
 - **Unified search**: MusicBrainz for music
 - **Request queue**: pending → approved → available or declined, with auto-approval for trusted users
-- **Library integration**: Jellyfin, Navidrome — detect and mark existing items
+- **Library integration**: Jellyfin, Navidrome - can detect and mark existing items
+- **Lidarr integration**: Requests go through Lidarr into your library of choice
 - **Collections**: Create curated public or private collections of music
 - **Issue reporting**: Report broken/misattributed library items to admin triage
 - **Admin panel**: User roles, request rules, webhook notifications, metadata provider config
