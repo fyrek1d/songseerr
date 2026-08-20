@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,9 +25,27 @@ interface RequestButtonProps {
 export function RequestButton({ item, disabled, className }: RequestButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [autoApproveTrusted, setAutoApproveTrusted] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/request-policy")
+      .then((r) => r.json())
+      .then((d) => {
+        if (active) setAutoApproveTrusted(!!d.autoApproveTrusted);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const role = (session?.user as any)?.role;
+  const willAutoApprove = autoApproveTrusted && (role === "trusted" || role === "admin");
 
   async function submit() {
     setLoading(true);
@@ -55,7 +74,7 @@ export function RequestButton({ item, disabled, className }: RequestButtonProps)
         title: "Request submitted",
         description:
           data.request?.status === "approved"
-            ? "Auto-approved!"
+            ? "Request approved."
             : "Waiting for approval.",
       });
       router.refresh();
@@ -81,6 +100,11 @@ export function RequestButton({ item, disabled, className }: RequestButtonProps)
             <CoverImage coverUrl={item.coverUrl} title={item.title} type={item.type} />
           </div>
           <div className="flex-1 space-y-4">
+            {willAutoApprove && (
+              <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
+                You&apos;re a trusted user — this request will be auto-approved.
+              </p>
+            )}
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}

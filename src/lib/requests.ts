@@ -88,7 +88,7 @@ export async function createRequest(data: {
     pushRequestToArr(request);
   }
 
-  return { status: 201, request };
+  return { status: 201, request, autoApproved: approved };
 }
 
 export async function getRequests(filters?: {

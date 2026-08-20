@@ -99,7 +99,13 @@ export async function hasInLidarr(externalId: string, type?: string): Promise<bo
   if (type === "artist") {
     const artists = await arrRequest(config.url, config.apiKey, `/api/v1/artist?foreignArtistId=${encodeURIComponent(externalId)}`);
     if (Array.isArray(artists)) {
-      return artists.some((artist: any) => artist.foreignArtistId === externalId);
+      // Only count as "in library" when the artist actually has tracks on
+      // disk — a just-requested artist is monitored but may have no files yet.
+      return artists.some(
+        (artist: any) =>
+          artist.foreignArtistId === externalId &&
+          (artist.statistics?.trackFileCount ?? 0) > 0
+      );
     }
     return false;
   }
@@ -109,7 +115,13 @@ export async function hasInLidarr(externalId: string, type?: string): Promise<bo
   const rgId = (await resolveReleaseGroupId(externalId)) || externalId;
   const data = await arrRequest(config.url, config.apiKey, `/api/v1/album?foreignAlbumId=${encodeURIComponent(rgId)}`);
   if (!Array.isArray(data)) return false;
-  return data.some((album: any) => album.foreignAlbumId === rgId);
+  // Only count as "in library" when the album actually has track files — a
+  // just-requested album is added as monitored but has nothing downloaded yet.
+  return data.some(
+    (album: any) =>
+      album.foreignAlbumId === rgId &&
+      (album.statistics?.trackFileCount ?? 0) > 0
+  );
 }
 
 export async function pushToReadarr(title: string, externalId: string, authorName?: string): Promise<boolean> {

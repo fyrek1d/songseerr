@@ -42,7 +42,7 @@ export const POST = withAuth(async (req: NextRequest) => {
   });
 
   return NextResponse.json(
-    { request: result.request, error: result.error },
+    { request: result.request, autoApproved: result.autoApproved, error: result.error },
     { status: result.status }
   );
 });

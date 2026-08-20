@@ -27,6 +27,18 @@ function fuzzyEqual(a: string, b: string): boolean {
   return false;
 }
 
+// A query matches an artist name when the name is the same phrase or the
+// phrase appears as a whole word (so "paramore" matches "Jim Paramore" and
+// "Paramore GB" but not "Paramoreish"). Multi-word queries use containment.
+function nameMatches(query: string, name: string): boolean {
+  const nq = normalizeForMatch(query);
+  const na = normalizeForMatch(name);
+  if (!nq || !na) return false;
+  if (na === nq) return true;
+  if (nq.includes(" ")) return na.includes(nq);
+  return na.split(" ").includes(nq);
+}
+
 // Cheap existence check for a Cover Art Archive image URL. front-250 responds
 // with a 307 redirect to the real image (or 404 when no art exists) — do NOT
 // follow it: hitting the image CDN is slow and has caused these checks to take
@@ -130,118 +142,125 @@ async function resolveItunesCover(title: string, artist: string): Promise<string
   }
 }
 
-// Request a deep release set so grouping by release-group still captures an
-// artist's studio albums even when MusicBrainz's relevance ordering buries
-// them (e.g. The Slow Rush only appears ~77th for "tame impala").
+// Request a deep result set from both the release-group and release searches.
 const RELEASE_SEARCH_LIMIT = 100;
 
 // Lower rank = higher priority. Albums surface before EPs/singles, and live /
-// session / b-sides / remix / demo releases are demoted below studio albums
+// compilation / remix / demo / soundtrack albums are demoted below studio albums
 // so a discography shows the main records first.
 const typeRank: Record<string, number> = { Album: 0, EP: 1, Single: 2, Broadcast: 3, Other: 4 };
-const secondaryHint = /live|session|b-?sides|remix|demo|bootleg|deluxe|soundtrack|tour|radio/i;
+const nonStudioSecondary = /live|compilation|remix|demo|soundtrack|mixtape/i;
 
-function releaseRank(release: any): number {
-  const pt = release?.["release-group"]?.["primary-type"] || "Other";
+function groupRank(rg: any): number {
+  const pt = rg?.["primary-type"] || "Other";
   let rank = typeRank[pt] ?? 5;
-  if (pt === "Album" && secondaryHint.test(release.title || "")) rank = 1;
+  if (pt === "Album" && (rg?.["secondary-types"] || []).some((s: string) => nonStudioSecondary.test(s))) rank = 1;
   return rank;
 }
 
 export async function searchMusicBrainz(query: string, limit = 12, offset = 0): Promise<SearchResult[]> {
-  // Prefer releases BY an artist matching the query: the plain query also returns
-  // albums merely *titled* like the search term by unrelated bands (e.g. searching
-  // "radiohead" surfaces "Radiohead" by X-Dream). Fall back to a title phrase
-  // search when no artist matches (e.g. the query is an album name).
-  let data = await mbSearch(
+  // The release search only returns ~100 relevance-ranked releases and can omit
+  // studio albums entirely (e.g. Riot! never appears for "paramore"), so order
+  // the discography from the release-GROUP search (complete, distinct albums)
+  // and use the release search just to get a concrete release id per album for
+  // the detail page.
+  let rgData = await mbSearch(
+    `/release-group/?query=${encodeURIComponent(`artist:"${query}"`)}&fmt=json&limit=${RELEASE_SEARCH_LIMIT}&offset=${offset}`
+  );
+  if (!rgData?.["release-groups"]?.length) {
+    rgData = await mbSearch(
+      `/release-group/?query=${encodeURIComponent(`"${query}"`)}&fmt=json&limit=${RELEASE_SEARCH_LIMIT}&offset=${offset}`
+    );
+  }
+  const groups: any[] = rgData?.["release-groups"] || [];
+
+  let relData = await mbSearch(
     `/release/?query=${encodeURIComponent(`artist:"${query}"`)}&fmt=json&limit=${RELEASE_SEARCH_LIMIT}&offset=${offset}`
   );
-  if (!data?.releases?.length) {
-    data = await mbSearch(
+  if (!relData?.releases?.length) {
+    relData = await mbSearch(
       `/release/?query=${encodeURIComponent(`"${query}"`)}&fmt=json&limit=${RELEASE_SEARCH_LIMIT}&offset=${offset}`
     );
   }
-  if (!data?.releases) return [];
-
-  // Group releases by release-group so each distinct album appears once
-  // (editions/remasters of the same album collapse into one row). Keep the
-  // earliest release of each group as the canonical link target.
-  const groups = new Map<string, { releases: any[]; title: string }>();
-  for (const rel of data.releases || []) {
-    const rgId = rel["release-group"]?.id || rel.id;
-    if (!groups.has(rgId)) groups.set(rgId, { releases: [], title: rel.title });
-    groups.get(rgId)!.releases.push(rel);
+  const releaseByRg = new Map<string, any>();
+  for (const rel of relData?.releases || []) {
+    const rgId = rel["release-group"]?.id;
+    if (rgId && !releaseByRg.has(rgId)) releaseByRg.set(rgId, rel);
   }
 
   const seen = new Set<string>();
-  const ranked = Array.from(groups.values())
-    .map((g) => ({
-      release: [...g.releases].sort((a: any, b: any) =>
-        (a.date || "9999").localeCompare(b.date || "9999")
-      )[0],
-      groupTitle: g.title,
-    }))
+  const ranked = groups
+    .map((rg: any) => ({ rg, release: releaseByRg.get(rg.id) }))
     .sort((a, b) => {
-      const ra = releaseRank(a.release);
-      const rb = releaseRank(b.release);
+      const ra = groupRank(a.rg);
+      const rb = groupRank(b.rg);
       if (ra !== rb) return ra - rb;
-      const scoreDiff = (b.release.score || 0) - (a.release.score || 0);
+      const scoreDiff = (b.rg.score || 0) - (a.rg.score || 0);
       if (scoreDiff !== 0) return scoreDiff;
-      return (a.release.date || "9999").localeCompare(b.release.date || "9999");
+      return (a.rg["first-release-date"] || "9999").localeCompare(b.rg["first-release-date"] || "9999");
     })
     .filter((entry) => {
-      const key = normalizeForMatch(entry.groupTitle);
+      const key = normalizeForMatch(entry.rg.title);
       if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 
   const top = ranked.slice(0, limit);
-  const results: SearchResult[] = top.map(({ release, groupTitle }) => {
-    const artist = artistOf(release);
+
+  // Groups the release search omitted (studio albums can sit outside its 100
+  // result window) get a concrete release id from the release-group lookup.
+  await Promise.all(
+    top
+      .filter((entry) => !entry.release)
+      .map(async (entry) => {
+        const gd = await mbSearch(`/release-group/${entry.rg.id}?inc=releases&fmt=json`);
+        const rel = gd?.releases?.[0];
+        if (rel?.id) entry.release = rel;
+      })
+  );
+
+  const results: (SearchResult | null)[] = top.map(({ rg, release }) => {
+    if (!release?.id) return null;
+    const artist = artistOf(rg);
     return {
       id: release.id,
       type: "music" as const,
-      title: groupTitle,
+      title: rg.title,
       subtitle: artist || "Unknown artist",
       coverUrl: undefined as string | undefined,
       externalUrl: `https://musicbrainz.org/release/${release.id}`,
-      year: release.date ? parseInt(release.date.slice(0, 4), 10) : undefined,
-      popularity: release.score || 0,
+      year: rg["first-release-date"] ? parseInt(rg["first-release-date"].slice(0, 4), 10) : undefined,
+      popularity: rg.score || 0,
       details: {
         source: "musicbrainz",
-        releaseDate: release.date,
-        releaseGroupId: release["release-group"]?.id,
-        primaryType: release["release-group"]?.["primary-type"],
+        releaseDate: rg["first-release-date"],
+        releaseGroupId: rg.id,
+        primaryType: rg["primary-type"],
       },
     };
   });
 
   // Resolve covers in parallel: Cover Art Archive (release-group art, most
-  // reliable) first, then a verified iTunes lookup. The MB search response
-  // never includes cover-art-archive, so the old unverified iTunes grab is
-  // what produced wrong/missing art.
+  // reliable) first, then a verified iTunes lookup.
   await Promise.all(
-    top.map(async ({ release }, i: number) => {
+    top.map(async ({ rg, release }, i: number) => {
       if (!results[i]) return;
-      const rgId = release["release-group"]?.id;
-      if (rgId) {
-        const rgUrl = `${COVERART_URL}/release-group/${rgId}/front-250`;
-        if (await hasCover(rgUrl)) {
-          results[i].coverUrl = rgUrl;
-          return;
-        }
+      const rgUrl = `${COVERART_URL}/release-group/${rg.id}/front-250`;
+      if (await hasCover(rgUrl)) {
+        results[i]!.coverUrl = rgUrl;
+        return;
       }
       const relUrl = `${COVERART_URL}/release/${release.id}/front-250`;
       if (await hasCover(relUrl)) {
-        results[i].coverUrl = relUrl;
+        results[i]!.coverUrl = relUrl;
         return;
       }
-      results[i].coverUrl = await resolveItunesCover(results[i].title, results[i].subtitle);
+      results[i]!.coverUrl = await resolveItunesCover(results[i]!.title, results[i]!.subtitle);
     })
   );
 
-  return results;
+  return results.filter((r): r is SearchResult => r !== null);
 }
 
 export async function searchMusicBrainzArtists(query: string): Promise<SearchResult[]> {
@@ -252,11 +271,24 @@ export async function searchMusicBrainzArtists(query: string): Promise<SearchRes
   if (!data?.artists) return [];
 
   const nq = normalizeForMatch(query);
-  const results = (data.artists || [])
-    .filter((artist: any) => normalizeForMatch(artist.name).includes(nq))
-    .sort((a: any, b: any) => (b.score || 0) - (a.score || 0))
-    .slice(0, 12)
-    .map((artist: any) => ({
+  const seenNames = new Set<string>();
+  const artists = (data.artists || [])
+    .filter((artist: any) => nameMatches(query, artist.name))
+    .sort((a: any, b: any) => {
+      const ea = normalizeForMatch(a.name) === nq ? 0 : 1;
+      const eb = normalizeForMatch(b.name) === nq ? 0 : 1;
+      if (ea !== eb) return ea - eb;
+      return (b.score || 0) - (a.score || 0);
+    })
+    .filter((artist: any) => {
+      const key = normalizeForMatch(artist.name);
+      if (seenNames.has(key)) return false;
+      seenNames.add(key);
+      return true;
+    })
+    .slice(0, 12);
+
+  const results = artists.map((artist: any) => ({
       id: artist.id,
       type: "artist" as const,
       title: artist.name,
