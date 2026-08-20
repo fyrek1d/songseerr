@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { CoverImage } from "@/components/media-card";
 import { RequestButton } from "@/components/request-button";
 import { prisma } from "@/lib/prisma";
+import { hasInLidarr } from "@/lib/arr";
 import {
   getReleaseDetails,
   getReleaseTracks,
@@ -43,9 +44,12 @@ export default async function DetailPage({
     const alreadyInLibrary = await prisma.libraryItem.findFirst({
       where: { externalId: id, type: "music" },
     });
+    const inLidarr = await hasInLidarr(id);
     const alreadyRequested = await prisma.request.findFirst({
       where: { externalId: id, type: "music", status: { in: ["pending", "approved"] } },
     });
+
+    const alreadyOwned = !!alreadyInLibrary || inLidarr;
 
     const totalLengthMs = tracks.reduce((acc: number, t: any) => acc + (t.length || 0), 0);
 
@@ -80,10 +84,10 @@ export default async function DetailPage({
                   externalId: id,
                   externalUrl: `https://musicbrainz.org/release/${id}`,
                 }}
-                disabled={!!alreadyInLibrary || !!alreadyRequested}
+                disabled={alreadyOwned || !!alreadyRequested}
               />
-              {alreadyInLibrary && <Badge variant="success">Already in library</Badge>}
-              {alreadyRequested && <Badge variant="outline">Requested</Badge>}
+              {alreadyOwned && <Badge variant="success">Already in library</Badge>}
+              {!alreadyOwned && alreadyRequested && <Badge variant="outline">Requested</Badge>}
               <Button
                 variant="outline"
                 className="gap-1"
@@ -145,6 +149,8 @@ export default async function DetailPage({
       where: { externalId: id, type: "artist", status: { in: ["pending", "approved"] } },
     });
 
+    const inLidarr = await hasInLidarr(id, "artist");
+
     const artistImage = details._image || covers.find(Boolean);
     const bio =
       details._bio ||
@@ -195,9 +201,10 @@ export default async function DetailPage({
                   externalId: id,
                   externalUrl: `https://musicbrainz.org/artist/${id}`,
                 }}
-                disabled={!!alreadyRequested}
+                disabled={!!alreadyRequested || inLidarr}
               />
-              {alreadyRequested && <Badge variant="outline">Requested</Badge>}
+              {inLidarr && <Badge variant="success">Already in library</Badge>}
+              {!inLidarr && alreadyRequested && <Badge variant="outline">Requested</Badge>}
               <Button
                 variant="outline"
                 className="gap-1"
@@ -292,6 +299,8 @@ export default async function DetailPage({
     },
   });
 
+  const inLidarr = await hasInLidarr(release?.id || id);
+
   return (
     <div className="space-y-8">
       <BackButton />
@@ -323,9 +332,10 @@ export default async function DetailPage({
                   ? `https://musicbrainz.org/release/${release.id}`
                   : `https://musicbrainz.org/recording/${id}`,
               }}
-              disabled={!!alreadyRequested}
+              disabled={!!alreadyRequested || inLidarr}
             />
-            {alreadyRequested && <Badge variant="outline">Requested</Badge>}
+            {inLidarr && <Badge variant="success">Already in library</Badge>}
+            {!inLidarr && alreadyRequested && <Badge variant="outline">Requested</Badge>}
             {release?.id && (
               <>
                 <Button

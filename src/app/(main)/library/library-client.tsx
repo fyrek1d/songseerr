@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { CoverImage } from "@/components/media-card";
+import { ReportIssueButton } from "@/components/report-issue-button";
 import { useToast } from "@/components/ui/use-toast";
 import { RefreshCw, Search } from "lucide-react";
 
@@ -122,9 +123,15 @@ function ItemGrid({ items }: { items: LibraryItem[] }) {
             {item.artist && (
               <p className="line-clamp-1 text-xs text-muted-foreground">{item.artist}</p>
             )}
-            <Badge variant="secondary" className="mt-1">
-              {item.source}
-            </Badge>
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <Badge variant="secondary">{item.source}</Badge>
+              <ReportIssueButton
+                itemTitle={item.title}
+                itemType={item.type}
+                itemId={item.id}
+                iconOnly
+              />
+            </div>
           </div>
         </div>
       ))}

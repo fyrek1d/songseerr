@@ -21,10 +21,12 @@ export function ReportIssueButton({
   itemTitle,
   itemType,
   itemId,
+  iconOnly = false,
 }: {
   itemTitle: string;
   itemType: string;
   itemId?: string;
+  iconOnly?: boolean;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -61,8 +63,9 @@ export function ReportIssueButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" />}>
-        <Flag className="h-4 w-4" /> Report issue
+      <DialogTrigger render={<Button variant="outline" size={iconOnly ? "icon" : "default"} />}>
+        <Flag className="h-4 w-4" />
+        {!iconOnly && " Report issue"}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

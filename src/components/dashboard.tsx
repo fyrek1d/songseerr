@@ -177,7 +177,7 @@ export default async function Dashboard() {
         ? `Connected: ${stats.integrations.map((s) => s[0].toUpperCase() + s.slice(1)).join(", ")}`
         : "Check integrations",
     },
-    { title: "Media Storage", value: stats.system, icon: HardDrive, description: "Used on media drive" },
+    { title: "Media Storage", value: stats.system, icon: HardDrive, description: "Used" },
   ];
 
   return (

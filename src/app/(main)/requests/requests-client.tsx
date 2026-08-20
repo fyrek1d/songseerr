@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CoverImage } from "@/components/media-card";
@@ -154,34 +153,54 @@ export function RequestsClient({
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="bg-muted border-border">
-          <TabsTrigger value="queue">
-            Queue {canModerate && `(${queue.length})`}
-          </TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="mine">My requests ({myRequests.length})</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={tab === "queue" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("queue")}
+        >
+          Queue {canModerate && `(${queue.length})`}
+        </Button>
+        <Button
+          variant={tab === "history" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("history")}
+        >
+          History
+        </Button>
+        <Button
+          variant={tab === "mine" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("mine")}
+        >
+          My requests ({myRequests.length})
+        </Button>
+      </div>
 
-        <TabsContent value="queue" className="mt-4 space-y-3">
+      {tab === "queue" && (
+        <div className="space-y-3">
           {queue.length === 0 && (
             <p className="text-muted-foreground">No pending requests.</p>
           )}
           {queue.map((r) => (
             <RequestRow key={r.id} r={r} />
           ))}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="history" className="mt-4 space-y-3">
+      {tab === "history" && (
+        <div className="space-y-3">
           {history.length === 0 && (
             <p className="text-muted-foreground">No fulfilled or declined requests.</p>
           )}
           {history.map((r) => (
             <RequestRow key={r.id} r={r} />
           ))}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="mine" className="mt-4 space-y-3">
+      {tab === "mine" && (
+        <div className="space-y-3">
           {myRequests.length === 0 && (
             <p className="text-muted-foreground">
               You haven't made any requests yet. Search for something to get started.
@@ -190,8 +209,8 @@ export function RequestsClient({
           {myRequests.map((r) => (
             <RequestRow key={r.id} r={r} />
           ))}
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 }
