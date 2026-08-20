@@ -149,12 +149,18 @@ const RELEASE_SEARCH_LIMIT = 100;
 // compilation / remix / demo / soundtrack albums are demoted below studio albums
 // so a discography shows the main records first.
 const typeRank: Record<string, number> = { Album: 0, EP: 1, Single: 2, Broadcast: 3, Other: 4 };
-const nonStudioSecondary = /live|compilation|remix|demo|soundtrack|mixtape/i;
+// Live/compilation/remix/demo/... releases are demoted below studio albums.
+// The release-group search response sometimes omits secondary-types (e.g. a
+// live album can come back with sec: null), so also check the title.
+const nonStudioHint = /live|session|b-?sides|remix|demo|compilation|soundtrack|mixtape|bootleg|deluxe|tour|radio|unplugged|anniversary/i;
 
 function groupRank(rg: any): number {
   const pt = rg?.["primary-type"] || "Other";
   let rank = typeRank[pt] ?? 5;
-  if (pt === "Album" && (rg?.["secondary-types"] || []).some((s: string) => nonStudioSecondary.test(s))) rank = 1;
+  if (pt === "Album") {
+    const sec = (rg?.["secondary-types"] || []).join(" ");
+    if (nonStudioHint.test(`${sec} ${rg?.title || ""}`)) rank = 1;
+  }
   return rank;
 }
 
