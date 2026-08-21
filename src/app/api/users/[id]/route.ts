@@ -3,6 +3,7 @@ import { withAuth } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 
 export const PATCH = withAuth(async (req: NextRequest, { params }: any) => {
   const session = await getServerSession(authOptions);
@@ -10,14 +11,27 @@ export const PATCH = withAuth(async (req: NextRequest, { params }: any) => {
   if (role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { role: newRole } = body;
-  if (!["admin", "trusted", "user"].includes(newRole)) {
+  const { role: newRole, password } = body;
+
+  // Validate role if provided
+  if (newRole && !["admin", "trusted", "user"].includes(newRole)) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 
+  // Validate password if provided
+  if (password !== undefined) {
+    if (typeof password !== "string" || password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    }
+  }
+
+  const data: any = {};
+  if (newRole) data.role = newRole;
+  if (password !== undefined) data.hashedPassword = await bcrypt.hash(password, 10);
+
   const user = await prisma.user.update({
     where: { id: params.id },
-    data: { role: newRole },
+    data,
     select: { id: true, email: true, username: true, role: true },
   });
 

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { UserPlus, Trash2 } from "lucide-react";
+import { Lock, UserPlus, Trash2 } from "lucide-react";
 
 type User = {
   id: string;
@@ -69,6 +69,10 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
     password: "",
     role: "user",
   });
+  // Password change
+  const [passwordTarget, setPasswordTarget] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState<string | null>(null);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -87,6 +91,30 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
       router.refresh();
     } else {
       toast({ title: "Failed to update role", variant: "destructive" });
+    }
+  }
+
+  async function changePassword() {
+    if (!passwordTarget) return;
+    if (!newPassword || newPassword.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setChangingPassword(passwordTarget.id);
+    const res = await fetch(`/api/users/${passwordTarget.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: newPassword }),
+    });
+    setChangingPassword(null);
+    if (res.ok) {
+      toast({ title: "Password changed", variant: "success" });
+      setPasswordTarget(null);
+      setNewPassword("");
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => null);
+      toast({ title: data?.error || "Failed to change password", variant: "destructive" });
     }
   }
 
@@ -255,6 +283,22 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                     <Button
                       variant="ghost"
                       size="icon-sm"
+                      disabled={changingPassword === user.id || user.id === currentUserId}
+                      title={
+                        user.id === currentUserId
+                          ? "You can't change your own password"
+                          : "Change password"
+                      }
+                      onClick={() => {
+                        setPasswordTarget(user);
+                        setNewPassword("");
+                      }}
+                    >
+                      <Lock className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       disabled={deleting === user.id || user.id === currentUserId}
                       title={
                         user.id === currentUserId
@@ -273,32 +317,69 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
         </Table>
       </div>
 
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete user</DialogTitle>
-            <DialogDescription>
-              Delete {deleteTarget?.username || "this user"}? This also removes their
-              requests and collections.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={deleteUser}
-              disabled={deleting === deleteTarget?.id}
-            >
-              {deleting === deleteTarget?.id ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+<Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>Delete user</DialogTitle>
+             <DialogDescription>
+               Delete {deleteTarget?.username || "this user"}? This also removes their
+               requests and collections.
+             </DialogDescription>
+           </DialogHeader>
+           <DialogFooter>
+             <Button
+               variant="outline"
+               onClick={() => setDeleteTarget(null)}
+             >
+               Cancel
+             </Button>
+             <Button
+               variant="destructive"
+               onClick={deleteUser}
+               disabled={deleting === deleteTarget?.id}
+             >
+               {deleting === deleteTarget?.id ? "Deleting..." : "Delete"}
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
+       <Dialog open={!!passwordTarget} onOpenChange={(o) => !o && setPasswordTarget(null)}>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>Change password</DialogTitle>
+             <DialogDescription>
+               Set a new password for {passwordTarget?.username || "this user"}.
+             </DialogDescription>
+           </DialogHeader>
+           <div className="space-y-4">
+             <Label htmlFor="new-user-password">New Password</Label>
+             <Input
+               id="new-user-password"
+               type="password"
+               value={newPassword}
+               onChange={(e) => setNewPassword(e.target.value)}
+               placeholder="Minimum 6 characters"
+             />
+           </div>
+           <DialogFooter>
+             <Button
+               variant="outline"
+               onClick={() => {
+                 setPasswordTarget(null);
+                 setNewPassword("");
+               }}
+             >
+               Cancel
+             </Button>
+             <Button
+               onClick={changePassword}
+               disabled={changingPassword === passwordTarget?.id || !newPassword || newPassword.length < 6}
+             >
+               {changingPassword === passwordTarget?.id ? "Changing..." : "Change password"}
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
     </div>
   );
 }
