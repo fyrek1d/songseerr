@@ -265,7 +265,7 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                   {format(new Date(user.createdAt), "MMM d, yyyy")}
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-2" style={{ pointerEvents: 'auto' }}>
                     <Select
                       value={user.role}
                       onValueChange={(v) => v && changeRole(user.id, v)}
@@ -293,6 +293,7 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                         setPasswordTarget(user);
                         setNewPassword("");
                       }}
+                      style={{ pointerEvents: 'auto' }}
                     >
                       <Lock className="h-4 w-4" />
                     </Button>
@@ -306,6 +307,7 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                           : "Delete user"
                       }
                       onClick={() => setDeleteTarget(user)}
+                      style={{ pointerEvents: 'auto' }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
