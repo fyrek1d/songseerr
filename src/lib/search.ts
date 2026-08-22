@@ -317,8 +317,8 @@ export async function searchMusicBrainzArtists(query: string): Promise<SearchRes
 }
 
 // Resolve an artist image via iTunes (MusicBrainz has no artist art endpoint).
-// Only use a result whose artistName actually matches, so a fuzzy search term
-// doesn't show an unrelated artist's album cover.
+// Use strict name matching (exact normalized) so we don't assign an unrelated
+// artist's cover (e.g. Paramore's art to "Paramore GB" or "Jim Paramore").
 async function resolveArtistImage(artist: string): Promise<string | undefined> {
   const key = `artist|${artist.toLowerCase()}`;
   if (coverCache.has(key)) return coverCache.get(key);
@@ -326,7 +326,11 @@ async function resolveArtistImage(artist: string): Promise<string | undefined> {
     const data = await fetchJson(
       `${ITUNES_URL}/search?term=${encodeURIComponent(artist)}&entity=album&limit=25&attribute=artistTerm`
     );
-    const match = (data?.results || []).find((r: any) => r.artistName && fuzzyEqual(r.artistName, artist));
+    const normArtist = normalizeForMatch(artist);
+    const match = (data?.results || []).find((r: any) => {
+      const normResult = normalizeForMatch(r.artistName || "");
+      return normResult === normArtist;
+    });
     const url = match?.artworkUrl100;
     const resolved = url ? url.replace("100x100bb", "600x600bb") : undefined;
     coverCache.set(key, resolved);
