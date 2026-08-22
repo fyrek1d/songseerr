@@ -281,7 +281,7 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                       </SelectContent>
                     </Select>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       disabled={changingPassword === user.id || user.id === currentUserId}
                       title={
@@ -298,7 +298,7 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                       <Lock className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       disabled={deleting === user.id || user.id === currentUserId}
                       title={
