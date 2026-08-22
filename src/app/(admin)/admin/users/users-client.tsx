@@ -282,7 +282,7 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                     </Select>
                     <Button
                       variant="ghost"
-                      size="icon-sm"
+                      size="sm"
                       disabled={changingPassword === user.id || user.id === currentUserId}
                       title={
                         user.id === currentUserId
@@ -298,7 +298,7 @@ export function UsersClient({ users, currentUserId }: { users: User[]; currentUs
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon-sm"
+                      size="sm"
                       disabled={deleting === user.id || user.id === currentUserId}
                       title={
                         user.id === currentUserId
